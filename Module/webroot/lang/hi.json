@@ -83,5 +83,7 @@
   "update_github": "GitHub पर देखें",
   "update_note": "योगदान और तकनीकी चर्चाओं के लिए Telegram से जुड़ें या GitHub देखें।",
   "update_telegram": "Telegram से जुड़ें",
+  "settings_dev_mode": "डेवलपर मोड",
+  "settings_dev_mode_desc": "रॉ स्क्रिप्ट नाम और टर्मिनल आउटपुट दिखाएं",
   "update_title": "अपडेट और सहायता"
 }

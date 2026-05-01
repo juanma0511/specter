@@ -83,5 +83,7 @@
   "update_github": "Voir sur GitHub",
   "update_note": "Rejoignez le canal Telegram ou consultez GitHub pour les contributions et discussions techniques.",
   "update_telegram": "Rejoignez Telegram",
+  "settings_dev_mode": "Mode développeur",
+  "settings_dev_mode_desc": "Afficher les noms bruts des scripts et la sortie du terminal",
   "update_title": "Mise à jour et support"
 }

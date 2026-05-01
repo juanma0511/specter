@@ -1,3 +1,5 @@
+import { showToast } from './toast.js';
+
 let lastStatus = null;
 
 export function initNetwork() {
@@ -18,7 +20,6 @@ export async function updateNetworkStatus() {
   const statusIcon  = document.getElementById('status-icon');
   const statusValue = document.getElementById('status-value');
   const netChip     = document.getElementById('network-chip');
-  const netChipText = netChip?.querySelector('span');
 
   const { getTranslation } = await import('./i18n.js');
   const onlineText  = getTranslation('home_status_online') || 'Online';
@@ -26,21 +27,31 @@ export async function updateNetworkStatus() {
 
   if (online) {
     statusCard?.classList.remove('status-offline');
-    if (statusIcon)  statusIcon.name = 'wifi';
+    statusCard?.classList.add('status-online');
+    if (statusIcon)  statusIcon.textContent = 'wifi';
     if (statusValue) statusValue.textContent = onlineText;
-    if (netChipText) netChipText.textContent = onlineText;
     netChip?.classList.remove('offline');
-    if (netChip) netChip.icon = 'wifi';
+    if (netChip) {
+      const label = netChip.querySelector('#network-label');
+      if (label) label.textContent = onlineText;
+      const icon = netChip.querySelector('md-icon');
+      if (icon) icon.textContent = 'wifi';
+    }
   } else {
+    statusCard?.classList.remove('status-online');
     statusCard?.classList.add('status-offline');
-    if (statusIcon)  statusIcon.name = 'wifi_off';
+    if (statusIcon)  statusIcon.textContent = 'wifi_off';
     if (statusValue) statusValue.textContent = offlineText;
-    if (netChipText) netChipText.textContent = offlineText;
     netChip?.classList.add('offline');
-    if (netChip) netChip.icon = 'wifi_off';
+    if (netChip) {
+      const label = netChip.querySelector('#network-label');
+      if (label) label.textContent = offlineText;
+      const icon = netChip.querySelector('md-icon');
+      if (icon) icon.textContent = 'wifi_off';
+    }
 
     if (wasOnline === true) {
-      mdui.snackbar({ message: offlineText });
+      showToast(offlineText);
     }
   }
 }

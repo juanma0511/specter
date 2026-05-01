@@ -15,20 +15,20 @@ export async function loadContributors() {
   const { getTranslation } = await import('./i18n.js');
 
   grid.innerHTML = devs.map(dev => `
-    <mdui-card class="contributor-card" clickable
+    <md-outlined-card class="contributor-card"
                data-url="${encodeURI(dev.github || '')}">
       <img class="contributor-avatar"
            src="${dev.avatar || ''}"
            alt="${escapeHtml(dev.name)}"
            loading="lazy"
            onerror="this.src='assets/yurikey.png'" />
-      <p class="mdui-typescale-label-large contributor-name">
+      <p class="md-typescale-label-large contributor-name">
         ${escapeHtml(dev.name)}
       </p>
-      <p class="mdui-typescale-label-small contributor-role">
+      <p class="md-typescale-label-small contributor-role">
         ${escapeHtml(getTranslation('role_' + dev.role) || dev.role)}
       </p>
-    </mdui-card>
+    </md-outlined-card>
   `).join('');
 
   grid.querySelectorAll('[data-url]').forEach(card => {

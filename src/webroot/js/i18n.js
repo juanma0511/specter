@@ -4,7 +4,6 @@ let currentStrings = {};
 let fallbackStrings = {};
 
 export async function initI18n() {
-  // Pre-load English as fallback for missing translations
   try {
     const res = await fetch(`lang/source/string.json?ts=${Date.now()}`);
     fallbackStrings = await res.json();
@@ -50,9 +49,13 @@ function applyTranslations() {
       return;
     }
 
-    // Try current language first, fall back to English
     const val = currentStrings[key] || fallbackStrings[key];
     if (!val) return;
+
+    if (el.tagName === 'MD-NAVIGATION-TAB' || el.tagName === 'MD-ASSIST-CHIP' || el.tagName === 'MD-FILTER-CHIP') {
+      el.label = val;
+      return;
+    }
 
     if (val.includes('<')) {
       el.innerHTML = val;
@@ -61,15 +64,16 @@ function applyTranslations() {
       el.appendChild(document.createTextNode(val));
     }
   });
-
 }
 
 function wireLanguageSelect(currentLang) {
   const select = document.getElementById('language-select');
   if (!select) return;
 
-  // Wait for mdui-select to be upgraded before populating
-  customElements.whenDefined('mdui-select').then(() => {
+  Promise.all([
+    customElements.whenDefined('md-outlined-select'),
+    customElements.whenDefined('md-select-option'),
+  ]).then(async () => {
 
   const LANGUAGES = [
     ['en', '🇬🇧', 'English'],
@@ -85,9 +89,12 @@ function wireLanguageSelect(currentLang) {
   ];
 
   LANGUAGES.forEach(([code, flag, name]) => {
-    const item = document.createElement('mdui-menu-item');
+    const item = document.createElement('md-select-option');
     item.value = code;
-    item.textContent = `${flag} ${name}`;
+    const headline = document.createElement('div');
+    headline.slot = 'headline';
+    headline.textContent = `${flag} ${name}`;
+    item.appendChild(headline);
     item.addEventListener('click', async () => {
       try {
         await applyLanguage(code);
@@ -99,6 +106,7 @@ function wireLanguageSelect(currentLang) {
     select.appendChild(item);
   });
 
+  await new Promise(r => setTimeout(r, 0));
   select.value = currentLang;
   });
 }

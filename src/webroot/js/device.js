@@ -1,15 +1,17 @@
 import { getModuleDir } from './cfg.js';
 
 const INFO_URL = '/json/device-info.json';
+
 let bridge = null;
 async function getBridge() {
   if (!bridge) bridge = await import('./bridge.js');
   return bridge;
 }
 
-export function initDevice() {
-  loadDeviceInfo();
-  loadVersion();
+export async function initDevice() {
+  await loadDeviceInfo();
+  refreshDevice();
+  await loadVersion();
 }
 
 export async function refreshDevice() {
@@ -20,10 +22,16 @@ export async function refreshDevice() {
   await waitForValidDeviceInfo();
 }
 
+async function fetchDeviceInfo() {
+  const res = await fetch(`${INFO_URL}?ts=${Date.now()}`);
+  const data = await res.json();
+  if (data.android || data.kernel || data.root) return data;
+  throw new Error('empty');
+}
+
 async function loadDeviceInfo() {
   try {
-    const res = await fetch(`${INFO_URL}?ts=${Date.now()}`);
-    const data = await res.json();
+    const data = await fetchDeviceInfo();
     applyDeviceInfo(data);
   } catch { }
 }
@@ -32,12 +40,9 @@ async function waitForValidDeviceInfo(maxMs = 6000, intervalMs = 400) {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     try {
-      const res = await fetch(`${INFO_URL}?ts=${Date.now()}`);
-      const data = await res.json();
-      if (data.android || data.kernel || data.root) {
-        applyDeviceInfo(data);
-        return;
-      }
+      const data = await fetchDeviceInfo();
+      applyDeviceInfo(data);
+      return;
     } catch { }
     await new Promise(r => setTimeout(r, intervalMs));
   }
@@ -53,20 +58,20 @@ export async function loadVersion() {
   let version = null;
 
   try {
-    const { runScriptRaw } = await getBridge();
-    const { stdout } = await runScriptRaw(
-      `grep '^version=' "${getModuleDir()}/module.prop" | cut -d'=' -f2`
-    );
-    if (stdout) version = stdout.trim();
-  } catch { /* fall through to HTTP fallback */ }
+    const res = await fetch('/module.prop?ts=' + Date.now());
+    const text = await res.text();
+    const match = text.match(/^version=(.+)$/m);
+    if (match) version = match[1].trim();
+  } catch { }
 
   if (!version) {
     try {
-      const res = await fetch('/module.prop');
-      const text = await res.text();
-      const match = text.match(/^version=(.+)$/m);
-      if (match) version = match[1].trim();
-    } catch { /* ignore */ }
+      const { runScriptRaw } = await getBridge();
+      const { stdout } = await runScriptRaw(
+        `grep '^version=' "${getModuleDir()}/module.prop" | cut -d'=' -f2`
+      );
+      if (stdout) version = stdout.trim();
+    } catch { }
   }
 
   if (version) setText('version-value', version);

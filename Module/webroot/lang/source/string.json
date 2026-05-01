@@ -83,6 +83,18 @@
   "update_telegram": "Join Telegram",
   "update_note": "Join Telegram or check GitHub for contributions and technical discussions.",
 
+  "settings_advanced": "Advanced",
+  "settings_dev_mode": "Developer Mode",
+  "settings_dev_mode_desc": "Show raw script names and terminal output",
+
+  "simple_dialog_title": "Running…",
+  "simple_dialog_wait": "This may take a moment",
+  "simple_toast_error": "Failed",
+  "simple_toast_view_details": "View Details",
+  "history_title": "Recent Activity",
+  "history_empty": "No activity yet — run an action to get started",
+  "error_dialog_title": "Error Details",
+
   "script_history_title": "Script History",
   "script_history_empty": "No script history yet.",
   "dialog_clear": "Clear",

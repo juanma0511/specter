@@ -83,5 +83,7 @@
   "update_github": "GitHub'da Görüntüle",
   "update_note": "Güncellemeler, katkılar ve teknik tartışmalar için Telegram kanalımıza katılabilir veya GitHub'ı kontrol edebilirsin.",
   "update_telegram": "Telegram Kanalına Katıl",
+  "settings_dev_mode": "Geliştirici modu",
+  "settings_dev_mode_desc": "Ham komut dosyası adlarını ve terminal çıktısını göster",
   "update_title": "Güncelleme ve Destek"
 }

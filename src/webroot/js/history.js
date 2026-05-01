@@ -15,41 +15,137 @@ export function addEntry(scriptName, output) {
   const entries = getHistory();
   entries.unshift({ script: scriptName, output, time: new Date().toISOString() });
   if (entries.length > MAX_ENTRIES) entries.length = MAX_ENTRIES;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch { /* storage full */ }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch { }
 }
 
 export function clearHistory() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(STORAGE_KEY); } catch { }
 }
 
-export async function openHistoryDialog() {
-  const entries = await getHistory();
-  const isEmpty = !entries || entries.length === 0;
+function formatTime(isoString) {
+  try {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diff = now - date;
+    const oneDay = 86400000;
+    const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
-  const content = isEmpty
-    ? '<p class="mdui-typescale-body-medium empty-history" data-i18n="script_history_empty">No script history yet</p>'
-    : entries.map(e => `
-        <div class="history-entry">
-          <p class="mdui-typescale-label-medium history-script">${escapeHtml(e.script)}</p>
-          <p class="mdui-typescale-body-small history-time">${e.time}</p>
-          <pre class="history-output">${escapeHtml(e.output)}</pre>
-          <mdui-divider></mdui-divider>
-        </div>
-      `).join('');
+    if (diff < oneDay && date.getDate() === now.getDate()) {
+      return 'Today at ' + timeStr;
+    }
+    if (diff < 2 * oneDay && date.getDate() === new Date(now - oneDay).getDate()) {
+      return 'Yesterday at ' + timeStr;
+    }
+    if (date.getFullYear() === now.getFullYear()) {
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' at ' + timeStr;
+    }
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch {
+    return isoString;
+  }
+}
 
+function isErrorOutput(output) {
+  return output.includes('[!]') || output.toLowerCase().includes('error');
+}
+
+export async function openRecentActivity(devMode = false) {
+  const entries = getHistory();
   const { getTranslation } = await import('./i18n.js');
 
-  mdui.dialog({
-    headline: getTranslation('script_history_title') || 'Script History',
-    body: `<div class="history-list">${content}</div>`,
-    actions: [
-      {
-        text: getTranslation('dialog_clear') || 'Clear',
-        onClick: async () => { await clearHistory(); openHistoryDialog(); return false; }
-      },
-      { text: getTranslation('dialog_close') || 'Close' }
-    ],
-    scrollTargetSelectors: '.history-list',
-    closeOnOverlayClick: true,
+  if (!entries || entries.length === 0) {
+    const dialog = document.createElement('md-dialog');
+    dialog.innerHTML = `
+      <div slot="headline">${getTranslation('history_title') || 'Recent Activity'}</div>
+      <div slot="content">
+        <div class="activity-empty">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="var(--md-sys-color-outline)"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.95 8.95 0 0 0 13 21a9 9 0 0 0 0-18m-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          <p class="md-typescale-title-medium">${getTranslation('history_empty') || 'No history found'}</p>
+        </div>
+      </div>
+      <div slot="actions">
+        <md-text-button class="dialog-action-close">${getTranslation('dialog_close') || 'Close'}</md-text-button>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+    dialog.querySelector('.dialog-action-close').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', () => document.body.removeChild(dialog));
+    dialog.show();
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.className = 'activity-list';
+
+  entries.forEach((entry, index) => {
+    const i18nKey = window.__friendlyNames?.[entry.script];
+    const friendlyName = (i18nKey && getTranslation(i18nKey)) || entry.script;
+    const isError = isErrorOutput(entry.output);
+    const statusIcon = isError ? 'error' : 'check_circle';
+
+    const card = document.createElement('md-elevated-card');
+    card.className = 'activity-card' + (isError ? ' activity-card--error' : ' activity-card--success');
+
+    card.innerHTML = `
+      <div class="activity-card__header">
+        <div class="activity-card__leading">
+          <md-icon class="activity-card__icon">${statusIcon}</md-icon>
+        </div>
+        <div class="activity-card__content">
+          <span class="activity-card__name">${escapeHtml(friendlyName)}</span>
+          <span class="activity-card__time">${formatTime(entry.time)}</span>
+        </div>
+        ${devMode ? `<md-icon class="activity-card__chevron">expand_more</md-icon>` : ''}
+      </div>
+      ${devMode ? `<div class="activity-card__body">
+        <pre>${escapeHtml(entry.output)}</pre>
+        <button class="activity-card__copy-btn">Copy</button>
+      </div>` : ''}
+    `;
+
+    const header = card.querySelector('.activity-card__header');
+
+    if (devMode) {
+      const body = card.querySelector('.activity-card__body');
+      const chevron = card.querySelector('.activity-card__chevron');
+      const copyBtn = card.querySelector('.activity-card__copy-btn');
+
+      function toggle() {
+        const isOpen = body.classList.toggle('open');
+        chevron.classList.toggle('expanded', isOpen);
+      }
+
+      header.addEventListener('click', () => toggle());
+
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(entry.output).then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+        }).catch(() => {});
+      });
+    }
+
+    list.appendChild(card);
   });
+
+  const dialog = document.createElement('md-dialog');
+  dialog.innerHTML = `
+    <div slot="headline">${getTranslation('history_title') || 'Recent Activity'}</div>
+    <div slot="content"></div>
+    <div slot="actions">
+      <md-text-button class="dialog-action-clear">${getTranslation('dialog_clear') || 'Clear'}</md-text-button>
+      <md-text-button class="dialog-action-close">${getTranslation('dialog_close') || 'Close'}</md-text-button>
+    </div>
+  `;
+  dialog.querySelector('[slot="content"]').appendChild(list);
+  document.body.appendChild(dialog);
+
+  dialog.querySelector('.dialog-action-clear').addEventListener('click', async () => {
+    clearHistory();
+    dialog.close();
+    openRecentActivity();
+  });
+  dialog.querySelector('.dialog-action-close').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => document.body.removeChild(dialog));
+  dialog.show();
 }

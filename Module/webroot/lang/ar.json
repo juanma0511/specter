@@ -83,5 +83,7 @@
   "update_github": "العرض على GitHub",
   "update_note": "انضم إلى Telegram أو تفقد GitHub للمساهمات والمناقشات التقنية.",
   "update_telegram": "انضم إلى Telegram",
+  "settings_dev_mode": "وضع المطور",
+  "settings_dev_mode_desc": "عرض أسماء البرامج النصية الخام ومخرجات الطرفية",
   "update_title": "التحديث والدعم"
 }
