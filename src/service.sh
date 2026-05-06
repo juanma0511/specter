@@ -132,7 +132,8 @@ disable_bootloader_spoofer
 
 sh "$MODDIR/features/suspicious_props.sh" >/dev/null 2>&1 || true
 
-block_rom_spoof_engines
+# Block ROM spoof engines in background (uses sp_persist — not safe inline at boot)
+( block_rom_spoof_engines ) &
 
 log "SERVICE" "Boot-time features done"
 

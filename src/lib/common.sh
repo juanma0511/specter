@@ -425,6 +425,12 @@ block_rom_spoof_engines() {
 }
 
 disable_bootloader_spoofer() {
+  _conflict_flag="/data/adb/Specter/conflict_choice"
+  if [ -f "$_conflict_flag" ] && grep -q "disabled" "$_conflict_flag" 2>/dev/null; then
+    unset _conflict_flag
+    return 0
+  fi
+  unset _conflict_flag
   _spoofers="es.chiteroman.bootloaderspoofer com.sevtinge.hyperceiler com.luckyzyx.luckytool"
   for _pkg in $_spoofers; do
     if grep -q "$_pkg" /data/system/packages.list 2>/dev/null; then

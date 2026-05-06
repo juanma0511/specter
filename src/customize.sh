@@ -31,6 +31,41 @@ case "$ROOT_SOL" in
   legacy)   ui_print "- Legacy root detected"   ;;
 esac
 
+_CONFLICT_PKGS="es.chiteroman.bootloaderspoofer com.sevtinge.hyperceiler com.luckyzyx.luckytool"
+_CONFLICT_FOUND=""
+for _pkg in $_CONFLICT_PKGS; do
+  if grep -q "$_pkg" /data/system/packages.list 2>/dev/null; then
+    _CONFLICT_FOUND="$_CONFLICT_FOUND $_pkg"
+  fi
+done
+
+if [ -n "$_CONFLICT_FOUND" ]; then
+  ui_print ""
+  ui_print " Conflicting packages detected:"
+  for _pkg in $_CONFLICT_FOUND; do
+    ui_print "    $_pkg"
+  done
+  ui_print ""
+  ui_print " These may interfere with Specter's spoofing."
+  ui_print ""
+  ui_print " Stop them automatically on each boot?"
+  ui_print "  Vol Up   = Yes (disable on boot)"
+  ui_print "  Vol Down = No (keep as is)"
+  ui_print ""
+  _vol; _choice=$?
+  mkdir -p /data/adb/Specter
+  if [ $_choice -eq 0 ]; then
+    ui_print "- Will stop conflicting packages on boot."
+    echo "enabled" > /data/adb/Specter/conflict_choice
+  else
+    ui_print "- Keeping conflicting packages."
+    echo "disabled" > /data/adb/Specter/conflict_choice
+  fi
+  unset _choice
+  ui_print ""
+fi
+unset _CONFLICT_PKGS _CONFLICT_FOUND _pkg
+
 _ts_found=false
 if [ -d "/data/adb/modules/tricky_store" ] || [ -d "/data/adb/modules_update/tricky_store" ]; then
   _ts_found=true
