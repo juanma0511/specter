@@ -31,13 +31,13 @@ If Specter helps you out, consider supporting the project:
 1. Install [Play Integrity Fix](https://github.com/KOWX712/PlayIntegrityFix/releases/latest) or [Play Integrity Fork](https://github.com/osm0sis/PlayIntegrityFork/releases/latest)
 2. Install [Tricky Store](https://github.com/5ec1cff/TrickyStore/releases/latest)
 3. Install Specter via Magisk / KernelSU / APatch
-4. Open WebUI → Setup tab → Install a keybox
+4. Open WebUI → Tools tab → Install a keybox
 
 ## Features
 
 - **Keybox** — multi-source catalog, custom keybox (file/URL/path), Google revocation checking, private keybox support, backup and restore
-- **Spoof** — target.txt, security patch, verified boot hash, blacklist, smartmerge, TEESimulator support
-- **Maintain** — GMS kill, PIF fix, HMA-OSS / Zygisk Next / RKA configs, detection cleanup, Widevine L1
+- **Tools** — target.txt, security patch, verified boot hash, blacklist, smartmerge, TEESimulator support, GMS kill, PIF fix, HMA-OSS / Zygisk Next / RKA configs, detection cleanup, Widevine L1
+- **Control** — per-feature toggles (boot hardening, bootloader spoofer block, ROM spoof blocking, LSPosed clean, recovery hide, action pipeline steps), conflict resolution management
 - **Settings** — theme (dark/light/auto + 9 color presets + Monet), language, dev mode with terminal, project contributors
 
 ## Requirements
