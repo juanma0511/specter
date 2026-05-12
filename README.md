@@ -12,13 +12,13 @@
 
 Keybox management, security spoofing, and detection avoidance: clean, focused, no bloat.
 
+The module is clean by design: that's what makes it the right choice, not bloat and gimmicks like others. With a clean webUI that gives you the best experience.
+
 [Download](https://github.com/dpejoh/specter/releases/latest)
 
 ## Background
 
 Specter is a complete rewrite of what I originally built as Yurikey. After the rewrite was turned down by Yuri, I went my own way.
-
-The module is clean by design: that's what makes it the right choice, not bloat and gimmicks like others. With a clean webUI that gives you the best experience.
 
 ## Support
 
