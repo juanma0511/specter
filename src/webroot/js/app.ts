@@ -12,7 +12,7 @@ import { openRecentActivity, addEntry } from './history.js';
 import { showToast, closeToast } from './toast.js';
 import { initTerminal, appendToOutput } from './terminal.js';
 import { openFileBrowser } from './file-browser.js';
-import { openTargetAppsManager } from './target-apps.js';
+import { openTargetAppsManager, refreshAppCatalog } from './target-apps.js';
 import { showErrorDialog } from './dialog.js';
 import { setFriendlyNames, getFriendlyName } from './state.js';
 import { API_URLS } from './constants.js';
@@ -81,6 +81,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   wireConflictToggles();
   initRedirect();
   buildFriendlyNames();
+  document.addEventListener('languageChanged', () => {
+    const active = document.querySelector('.nav-tab--active') as HTMLElement | null;
+    const indicator = document.getElementById('nav-indicator') as HTMLElement | null;
+    if (active && indicator) {
+      indicator.style.left = active.offsetLeft + 'px';
+      indicator.style.width = active.offsetWidth + 'px';
+    }
+  });
 
   const savedDevMode = await cfgGet('dev_mode', 'false') || 'false';
   devMode = savedDevMode === 'true';
@@ -99,16 +107,6 @@ function wireTopBarScroll() {
 }
 
 function wireNavigation() {
-  // Migrate old hashes to new tools-page
-  const oldHash = location.hash.replace('#', '');
-  if (oldHash === 'setup' || oldHash === 'maintain') {
-    history.replaceState(null, '', '#tools');
-  }
-  const savedTab = localStorage.getItem('lastTab');
-  if (savedTab === 'setup' || savedTab === 'maintain') {
-    localStorage.setItem('lastTab', 'tools');
-  }
-
   const navTabs = document.querySelectorAll('.nav-tab');
   const indicator = document.getElementById('nav-indicator')!;
   const pageIds = ['home-page', 'tools-page', 'control-page', 'settings-page'];
@@ -137,7 +135,6 @@ function wireNavigation() {
     pages.forEach((el) => { el.hidden = el.id !== pageId; });
     const hash = pageId.replace('-page', '');
     if (location.hash !== `#${hash}`) history.pushState(null, '', `#${hash}`);
-    localStorage.setItem('lastTab', hash);
   }
 
   function navigateTo(hash: string) {
@@ -175,10 +172,7 @@ function wireNavigation() {
   });
 
   requestAnimationFrame(() => {
-    const savedTab = localStorage.getItem('lastTab');
-    const initialHash = location.hash.replace('#', '');
-    const tabName = initialHash || savedTab || 'home';
-    navigateTo(`#${tabName}`);
+    navigateTo('#home');
   });
 }
 
@@ -268,7 +262,7 @@ async function runDevAction(scriptName: string, _item: HTMLElement, _spinner: HT
     addEntry(scriptName, lines.join('\n'));
   });
   child.on('error', (err: Error) => {
-    const msg = err.message || 'Unknown error';
+    const msg = err.message || getTranslation('simple_toast_error') || 'Failed';
     appendToOutput(`> Error: ${msg}`, true);
     addEntry(scriptName, msg);
   });
@@ -313,7 +307,7 @@ async function runSimpleAction(scriptName: string, _item: HTMLElement, _spinner:
     }
   });
   child.on('error', (err: Error) => {
-    const msg = err.message || 'Unknown error';
+    const msg = err.message || getTranslation('simple_toast_error') || 'Failed';
     appendToOutput(`> Error: ${msg}`, true);
     addEntry(scriptName, msg);
     if (dialog) dialog.close();
@@ -335,6 +329,7 @@ function wireRefreshButton() {
     btn.disabled = true;
     await refreshDevice();
     await refreshKeyboxStatus();
+    await refreshAppCatalog();
     btn.disabled = false;
   });
 }
@@ -431,9 +426,9 @@ async function openCustomKeyboxDialog() {
         <div class="custom-kb-section">
           <div class="li-icon"><md-icon>upload_file</md-icon></div>
           <p style="margin:6px 0 2px;font-size:0.8125rem">${t('custom_kb_file', 'Import File')}</p>
-          <p style="margin:0 0 8px;font-size:0.6875rem;color:var(--md-sys-color-on-surface-variant)">
-            Select a keybox XML file from your device
-          </p>
+            <p style="margin:0 0 8px;font-size:0.6875rem;color:var(--md-sys-color-on-surface-variant)">
+              ${t('custom_kb_file_desc', 'Select a keybox XML file from your device')}
+            </p>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <md-assist-chip id="kb-file-chip" label="${t('custom_kb_no_file', 'No file selected')}" style="height:36px;font-size:0.75rem"></md-assist-chip>
             <md-filled-tonal-button id="kb-file-btn" style="height:36px;font-size:0.75rem">${t('custom_kb_browse', 'Browse Files')}</md-filled-tonal-button>
@@ -596,7 +591,7 @@ async function openCustomKeyboxDialog() {
           `}
         </div>
         <div slot="actions">
-          <md-text-button id="kb-detect-cancel">${t('dialog_close', 'Cancel')}</md-text-button>
+          <md-text-button id="kb-detect-cancel">${t('dialog_cancel', 'Cancel')}</md-text-button>
           <div class="spacer"></div>
           <md-filled-button id="kb-detect-apply" class="detected-dialog-apply">${t('custom_kb_apply_confirm', 'Apply')}</md-filled-button>
         </div>
@@ -660,7 +655,7 @@ function wireSecurityPatch() {
     dialog.innerHTML = `
       <div slot="headline">${t('sp_dialog_title', 'Set Security Patch')}</div>
       <div slot="content" style="min-height:0">
-        <md-outlined-text-field id="sp-input" type="text" label="${t('sp_dialog_label', 'Security Patch Date')}" placeholder="YYYY-MM-DD" maxlength="10" autocapitalize="none" style="width:100%;--md-outlined-text-field-container-shape:14px">
+        <md-outlined-text-field id="sp-input" type="text" label="${t('sp_dialog_label', 'Security Patch Date')}" placeholder="YYYY-MM-DD" data-i18n-placeholder="sp_placeholder" maxlength="10" autocapitalize="none" style="width:100%;--md-outlined-text-field-container-shape:14px">
           <md-icon-button slot="trailing-icon" id="sp-generate" aria-label="${t('sp_generate', 'Generate')}">
             <md-icon>autorenew</md-icon>
           </md-icon-button>

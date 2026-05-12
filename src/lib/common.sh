@@ -1,4 +1,4 @@
-# shellcheck shell=sh disable=SC3057,SC3052
+# shellcheck shell=sh
 ROOT_SOL=""
 
 log() { echo "[$1] $2"; }
@@ -339,45 +339,6 @@ version_ge() {
   }'
 }
 
-disable_rom_spoof_engines() {
-  _detected=false
-  resetprop 2>/dev/null | grep -qE 'persist\.sys\.(pihooks|entryhooks|pixelprops)' && _detected=true
-  [ -f "$GMS_PROPS_FILE" ] && _detected=true
-  [ "$_detected" = "false" ] && unset _detected && return 0
-
-  # Data-driven spoof engine disable map
-  while IFS='|' read -r _dre_prop _dre_val; do
-    resetprop 2>/dev/null | grep -q "$_dre_prop" || sp_persist "$_dre_prop" "$_dre_val"
-  done << MAP
-persist.sys.pihooks.first_api_level|
-persist.sys.pihooks.security_patch|
-MAP
-
-  while IFS='|' read -r _dre_prop _dre_val; do
-    sp_persist "$_dre_prop" "$_dre_val"
-  done << MAP
-persist.sys.pihooks.disable.gms_props|true
-persist.sys.pihooks.disable.gms_key_attestation_block|true
-persist.sys.entryhooks_enabled|false
-persist.sys.pixelprops.gms|false
-persist.sys.pixelprops.gapps|false
-persist.sys.pixelprops.google|false
-persist.sys.pixelprops.pi|false
-MAP
-
-  if [ -f "$GMS_PROPS_FILE" ] && [ "$(resetprop persist.sys.spoof.gms 2>/dev/null)" != "false" ]; then
-    resetprop persist.sys.spoof.gms false 2>/dev/null || true
-  fi
-
-  while IFS= read -r _prop; do
-    [ -z "$_prop" ] && continue
-    resetprop -p --delete "$_prop" 2>/dev/null || true
-  done <<PROPS
-$(getprop 2>/dev/null | grep -E "pihook|pixelprops" | sed "s/^\[\(.*\)\]:.*/\1/" || true)
-PROPS
-
-  unset _detected _dre_prop _dre_val _prop
-}
 
 STD_ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 SHUFFLED_ALPHABET="1dgWnocayqxU3r6vA5lCIPYfHmkV08b4tz+KMsp2NQ9LRXihODwSj7BEFJ/ZuGTe"
@@ -398,6 +359,8 @@ run_device_info() {
 
 _parse_serial() {
   _h="$1"
+  # Check if shell supports string slicing — needed for DER parsing below
+  case "${_h:0:1}" in "") return 1 ;; esac 2>/dev/null || { log "WARN" "Shell lacks string slicing — skipping serial decode"; return 1; }
   case "$_h" in 30*) _h="${_h#30}" ;; *) return 1 ;; esac
   _l_hex="${_h:0:2}" _l_dec=$((16#$_l_hex))
   [ $_l_dec -ge 128 ] && _h="${_h:2 + ($_l_dec - 128) * 2}" || _h="${_h:2}"
@@ -458,8 +421,8 @@ find_kmInstallKeybox() {
   _fk_lib_dir="/vendor/lib64"
   [ "$_fk_abi" != "arm64" ] && [ "$_fk_abi" != "x86_64" ] && _fk_lib_dir="/vendor/lib"
   _fk_bin=""
-  for _fk_dir in "$_fk_lib_dir/hw" "$_fk_lib_dir"; do
-    _fk_bin=$(find "$_fk_dir" -name "*kmInstallKeybox*" 2>/dev/null | head -1)
+  for _fk_dir in "$_fk_lib_dir/hw" "$_fk_lib_dir" "/vendor/bin"; do
+    _fk_bin=$(find "$_fk_dir" -iname "*kmInstallKeybox*" 2>/dev/null | head -1)
     [ -n "$_fk_bin" ] && break
   done
   echo "${_fk_bin:-}"

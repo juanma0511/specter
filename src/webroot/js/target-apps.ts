@@ -52,9 +52,7 @@ const BLACKLIST_LABEL_KEYS: Record<string, string> = {
 };
 
 const TARGET_CACHE_FILE = '/data/adb/Specter/app_labels.json';
-const TARGET_CACHE_VERSION = '/data/adb/Specter/app_labels_version';
 const APP_CATALOG_API = 'https://rawbin.netlify.app/apps';
-const APP_CATALOG_VERSION_API = APP_CATALOG_API + '/version';
 
 const BL_DEFAULTS = [
   'com.android.chrome', 'com.google.android.apps.photos', 'com.google.android.youtube',
@@ -81,23 +79,13 @@ function t(key: string, fallback: string): string {
 
 async function loadAppLabels(installedPkgs: string[]): Promise<Map<string, string>> {
   const labels = new Map<string, string>();
-  const { stdout: localVersionRaw } = await exec(`cat ${TARGET_CACHE_VERSION} 2>/dev/null || echo "0"`);
-  const localVersion = parseInt(localVersionRaw.trim(), 10) || 0;
-
-  let needsRefresh = false;
-  try {
-    const resp = await fetch(APP_CATALOG_VERSION_API + '?ts=' + Date.now());
-    if (resp.ok) {
-      const data = await resp.json() as { version?: number };
-      needsRefresh = (data.version ?? 0) > localVersion;
-    } else {
-      needsRefresh = true;
-    }
-  } catch {
-    needsRefresh = false;
-  }
-
   let cached: Record<string, string> = {};
+
+  const { stdout: mtimeRaw } = await exec(`stat --format %Y ${TARGET_CACHE_FILE} 2>/dev/null || echo "0"`);
+  const mtime = parseInt(mtimeRaw.trim(), 10) || 0;
+  const age = Date.now() / 1000 - mtime;
+  const needsRefresh = mtime === 0 || age >= 86400;
+
   if (!needsRefresh) {
     const { stdout: cachedRaw } = await exec(`cat ${TARGET_CACHE_FILE} 2>/dev/null || echo "{}"`);
     try { cached = JSON.parse(cachedRaw || '{}'); } catch { cached = {}; }
@@ -110,11 +98,6 @@ async function loadAppLabels(installedPkgs: string[]): Promise<Map<string, strin
         const content = JSON.stringify(catalog);
         await exec(`mkdir -p /data/adb/Specter && cat > ${TARGET_CACHE_FILE} << 'CEOF'\n${content}\nCEOF`);
         cached = catalog;
-        const resp = await fetch(APP_CATALOG_VERSION_API + '?ts=' + Date.now());
-        if (resp.ok) {
-          const data = await resp.json() as { version?: number };
-          await exec(`printf '%s' ${data.version ?? 0} > ${TARGET_CACHE_VERSION}`);
-        }
       }
     } catch (e) {
       console.warn('App catalog fetch failed, using cached/fallback', e);
@@ -129,6 +112,18 @@ async function loadAppLabels(installedPkgs: string[]): Promise<Map<string, strin
     labels.set(pkg, cached[pkg] || pkg);
   }
   return labels;
+}
+
+export async function refreshAppCatalog(): Promise<void> {
+  try {
+    const catalog = await fetchJson<Record<string, string>>(APP_CATALOG_API);
+    if (catalog) {
+      const content = JSON.stringify(catalog);
+      await exec(`mkdir -p /data/adb/Specter && cat > ${TARGET_CACHE_FILE} << 'CEOF'\n${content}\nCEOF`);
+    }
+  } catch (e) {
+    console.warn('App catalog force refresh failed', e);
+  }
 }
 
 function nextState(current: AppState): AppState {
@@ -164,7 +159,7 @@ export async function openTargetAppsManager() {
         <md-icon>arrow_back</md-icon>
       </button>
       <h2 class="ta-title">${t('ta_title', 'App Targeting')}</h2>
-      <button id="ta-menu-btn" class="ta-menu-btn" aria-label="More options">
+      <button id="ta-menu-btn" class="ta-menu-btn" aria-label="More options" data-i18n-aria="ta_menu_more">
         <md-icon>more_vert</md-icon>
       </button>
       <md-menu id="ta-menu" class="ta-menu" anchor="ta-menu-btn" positioning="fixed">
@@ -261,7 +256,6 @@ export async function openTargetAppsManager() {
 
     if (mode === 'blacklist') {
       titleEl.textContent = t('bl_title', 'Blacklist');
-      overlay.classList.add('ta-overlay--bl');
       if (modeHeadline) modeHeadline.textContent = t('ta_edit_target', 'Back to targeting');
       if (filterSel) { filterSel.label = t('bl_filter_blacklisted', 'Blacklisted'); filterSel.icon = 'block'; }
       if (filterNot) { filterNot.label = t('bl_filter_not_blacklisted', 'Not Blacklisted'); filterNot.icon = 'radio_button_unchecked'; }
@@ -270,7 +264,6 @@ export async function openTargetAppsManager() {
       }
     } else {
       titleEl.textContent = t('ta_title', 'App Targeting');
-      overlay.classList.remove('ta-overlay--bl');
       if (modeHeadline) modeHeadline.textContent = t('ta_edit_blacklist', 'Edit blacklist');
       if (filterSel) { filterSel.label = t('ta_filter_selected', 'Selected'); filterSel.icon = 'check_circle'; }
       if (filterNot) { filterNot.label = t('ta_filter_not_selected', 'Not Selected'); filterNot.icon = 'radio_button_unchecked'; }

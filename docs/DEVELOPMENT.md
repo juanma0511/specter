@@ -58,7 +58,6 @@ Pipelines are text files in `src/pipelines/` listing feature scripts to run:
 gms.sh
 target.sh
 security_patch.sh
-boot_hash.sh
 keybox.sh
 pif.sh?
 ```

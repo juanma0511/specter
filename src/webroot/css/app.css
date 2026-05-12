@@ -1678,13 +1678,7 @@ md-filled-tonal-button {
   opacity: 0.55;
 }
 
-.ta-overlay--bl .ta-header {
-  background: var(--md-sys-color-error-container);
-}
 
-.ta-overlay--bl .ta-title {
-  color: var(--md-sys-color-on-error-container);
-}
 
 .ta-fab {
   position: fixed;

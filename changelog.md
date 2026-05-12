@@ -89,10 +89,17 @@
 - **PlayStrong label fix** — renamed `io.github.mhmrdd.libxposed.ps.passit` from "PassIt" to "PlayStrong" in both the app catalog and RKA error message
 - **Security Patch dialog** — "Set Security Patch" now opens an M3 dialog with a date input field pre-filled with the previous month's 5th; added a trailing `autorenew` icon button to auto-generate the computed date; user can edit before saving
 - **Consistent logging** — App Targeting overlay now logs all operations with `[TARGET]` prefix to the terminal, matching the convention of other feature scripts
+- **WebUI tab persistence removed** — now always opens on Home page instead of restoring the last visited tab across sessions
+- **App Targeting moved** — relocated from "Module Configs" to "Tricky Store" section, ordered as 2nd item (after "Set target.txt", before "Set Security Patch")
+- **`kmInstallKeybox` search expanded** — Added `/vendor/bin` to search paths and changed `-name` to `-iname` for case-insensitive matching, fixing detection on devices where the binary uses capital letters (`KmInstallKeybox`)
 
 ### Bug Fixes
 - **Removed `boot_hash.sh`** — the boot hash (`ro.boot.vbmeta.digest`) is computed automatically by the bootloader/AVB. Overriding it is pointless. Removed the feature script, pipeline entry, all action/service/boot references, control toggles, translation keys, and Tools/Control page entries.
 - **Removed `pif2.sh`** — "Fix PIF Detection" was a one-time cleanup of ROM spoof engine persistent props. The boot-time `block_rom_spoof_engines` already handles this after every reboot. Any module that requires a restart makes the on-demand button redundant. Removed the feature script, wrapper, Tools page entry, and translation keys.
+- **Removed dead `disable_rom_spoof_engines()`** — become orphaned after `pif2.sh` removal. The active `block_rom_spoof_engines()` (used by boot scripts) stays.
+- **`_parse_serial` POSIX safety** — added shell capability check before string slicing operations. Falls back gracefully with a warning log if the shell lacks `${var:n:m}` support, instead of silently producing wrong output. Removed the suppressed `SC3057,SC3052` shellcheck warnings.
+- **Orphaned `config.json` cleaned up** — 512KB HMA config backup removed from repo root, moved to `docs/examples/hma-config.json`, added to `.gitignore`.
+- **ARCHITECTURE.md updated** — removed all references to deleted features (`boot_hash.sh`, `pif2.sh`, `suspicious_props_clean.sh`) from feature lists, pipeline docs, ASCII diagrams, and file counts.
 - **Custom keybox URL: raw file no longer copied on decode failure** (`keybox.sh`) — if the downloaded custom keybox isn't valid base64, the script now restores the backup and exits with an error instead of writing garbage to `keybox.xml`.
 - **`set -e` safety** (`cleanup.sh`, `common.sh`): added `2>/dev/null || true` guards to `resetprop` calls in `cleanup.sh:105-106` and `disable_rom_spoof_engines():370`. Added `|| true` to `apply_boot_hardening` call in `cleanup.sh:110`. Prevents mid-script abort if these commands fail.
 - **Removed dead code** (`common.sh`): `resolve_module_root()` — never called, logic already inlined in `device-info.sh`.

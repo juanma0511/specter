@@ -48,7 +48,7 @@ export async function openFileBrowser(onSelect: (path: string) => void) {
       <div slot="actions" class="fb-actions">
         <md-text-button id="fb-cancel">${t('dialog_close', 'Close')}</md-text-button>
         <div class="spacer"></div>
-        <md-filled-button id="fb-select" class="fb-select-btn" ${selectedFile ? '' : 'disabled'}>${t('custom_kb_apply', 'Select')}</md-filled-button>
+        <md-filled-button id="fb-select" class="fb-select-btn" ${selectedFile ? '' : 'disabled'}>${t('fb_select', 'Select')}</md-filled-button>
       </div>
     `;
 

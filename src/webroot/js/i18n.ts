@@ -60,6 +60,7 @@ function applyTranslations() {
 
     if (el.tagName === 'MD-NAVIGATION-TAB' || el.tagName === 'MD-ASSIST-CHIP' || el.tagName === 'MD-FILTER-CHIP') {
       (el as any).label = val;
+      setAriaLabel(el, val);
       return;
     }
 
@@ -71,6 +72,20 @@ function applyTranslations() {
     }
   });
 
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const key = (el as HTMLElement).dataset.i18nAria;
+    if (!key) return;
+    const val = currentStrings[key] || fallbackStrings[key];
+    if (val) setAriaLabel(el, val);
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = (el as HTMLElement).dataset.i18nPlaceholder;
+    if (!key) return;
+    const val = currentStrings[key] || fallbackStrings[key];
+    if (val) (el as any).placeholder = val;
+  });
+
   document.querySelectorAll('md-filter-chip[data-preset]').forEach(chip => {
     const preset = (chip as HTMLElement).dataset.preset;
     if (!preset) return;
@@ -78,6 +93,12 @@ function applyTranslations() {
     const val = currentStrings[key] || fallbackStrings[key];
     if (val) (chip as any).label = val;
   });
+}
+
+function setAriaLabel(el: Element, val: string) {
+  if (el.hasAttribute('aria-label')) {
+    el.setAttribute('aria-label', val);
+  }
 }
 
 function wireLanguageSelect(currentLang: string) {
@@ -104,15 +125,15 @@ function wireLanguageSelect(currentLang: string) {
     headline.slot = 'headline';
     headline.textContent = `${flag} ${name}`;
     item.appendChild(headline);
-    item.addEventListener('click', async () => {
-      try {
-        await applyLanguage(code);
-        (select as any).value = code;
-      } catch (e) {
-        console.warn('Language change failed:', e);
-      }
-    });
     select.appendChild(item);
+  });
+
+  select.addEventListener('change', async () => {
+    try {
+      await applyLanguage((select as any).value);
+    } catch (e) {
+      console.warn('Language change failed:', e);
+    }
   });
 
   await new Promise(r => requestAnimationFrame(r));
