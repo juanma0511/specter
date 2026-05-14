@@ -48,15 +48,18 @@ _patch_date=$(grep '^boot=' /data/adb/tricky_store/security_patch.txt 2>/dev/nul
 _twrp="false"; [ -f "$SPECTER_DIR/twrp" ] && _twrp="true"
 _blacklist="false"; [ -f "$SPECTER_DIR/blacklist_enabled" ] && _blacklist="true"
 
-# TEE status
+# TEE status — try both tee_status (Yurikey) and tee_status.txt (TEESimulator)
 _tee_status="unknown"
-if [ -f "/data/adb/tricky_store/tee_status" ]; then
-  _tee_val=$(grep -E '^teeBroken=' /data/adb/tricky_store/tee_status | cut -d= -f2 2>/dev/null || echo "")
+for _tee_file in "/data/adb/tricky_store/tee_status" "/data/adb/tricky_store/tee_status.txt"; do
+  [ -f "$_tee_file" ] || continue
+  _tee_val=$(grep -E '^(teeBroken|tee_broken)=' "$_tee_file" | cut -d= -f2 2>/dev/null || echo "")
   case "$_tee_val" in
     true)  _tee_status="broken" ;;
     false) _tee_status="normal" ;;
   esac
-fi
+  break
+done
+unset _tee_file _tee_val
 
 # Output JSON
 cat <<EOF > "$INFO_PATH"

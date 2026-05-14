@@ -62,6 +62,7 @@ specter/
 │   │   ├── twrp.sh                       #   Delete TWRP folder
 │   │   ├── keybox_info.sh               #   Check keybox status (Google revocation + catalog identity)
 │   │   ├── suspicious_props.sh           #   Scan for leftover persistent props from modding tools
+│   │   ├── kill_play_store.sh            #   Force-stop + clear Play Store
 │   │
 │   ├── orchestrator.sh                   # Single entry point for all pipelines
 │   │
@@ -70,10 +71,11 @@ specter/
 │   │   └── root_hide                     #   hma → zygisk_next?
 │   │
 │   ├── customize.sh                      # Installation (sourced by installer - uses $MODPATH)
+│   ├── post-fs-data.sh                   # Early boot: resolve_conflicts() — runs blocking
 │   ├── service.sh                        # Boot-time property spoofer (late_start service)
 │   ├── boot-completed.sh                 # KernelSU/APatch only: runs at ACTION_BOOT_COMPLETED
 │   ├── uninstall.sh                      # Clean removal (sourced - uses $MODDIR from $0)
-│   ├── action.sh                         # Thin wrapper → calls orchestrator.sh
+│   ├── action.sh                         # Thin wrapper → orchestrator.sh
 │   │
 │   ├── rka/                              # Remote Key Attestation subsystem
 │   │   └── jsonarray.sh                  #   Shell JSON array library (pure awk)
@@ -162,23 +164,31 @@ WebUI button
   → features/keybox.sh             (same script, same contract)
 
 Boot (KernelSU / APatch):
-  → service.sh (late_start service, non-blocking)
+  → post-fs-data.sh (early boot, blocking)
     → resolve_conflicts()          (detect + adapt to conflicting modules)
+  → service.sh (late_start service, non-blocking)
     → apply_boot_props()           (data-driven prop hardening via sp_try)
     → exits early — boot-completed.sh handles post-boot hardening
   → boot-completed.sh (at ACTION_BOOT_COMPLETED)
+    → _feature_enabled gates
     → apply_boot_hardening()       (settings put + resetprop)
+    → security_patch.sh, suspicious_props.sh
+    → block_rom_spoof_engines
     → cfg_set for override.description
 
 Boot (Magisk):
-  → service.sh (late_start service)
+  → post-fs-data.sh (early boot, blocking)
     → resolve_conflicts()          (detect + adapt to conflicting modules)
+  → service.sh (late_start service)
     → apply_boot_props()           (data-driven prop hardening via sp_try)
-    → vbmeta fixer, additional hardening
     → polls sys.boot_completed (while/getprop loop) for post-boot actions
-    → apply_boot_hardening()       (done inline in service.sh)
-    → hide_recovery_folders()
+    → _feature_enabled gates for:
+      → apply_boot_hardening()     (settings put + resetprop)
+      → hide_recovery_folders()
+      → security_patch.sh, suspicious_props.sh
+      → block_rom_spoof_engines (background)
     → delayed re-spoof after 120s (background subshell)
+    → periodic suspicious_props.sh every hour
 ```
 
 ---
@@ -295,10 +305,18 @@ MODDIR=${0%/*}
 . "$MODDIR/lib/common.sh"
 . "$MODDIR/lib/paths.sh"
 . "$MODDIR/lib/config_env.sh"
+detect_root_solution
 
 log "BOOT" "Boot completed - finalizing"
 
-apply_boot_hardening
+_feature_enabled() { [ "$(cfg_get "$1" "${2:-1}")" != "0" ]; }
+
+_feature_enabled toggle_boot_hardening && apply_boot_hardening
+_feature_enabled toggle_dev_options 0 && disable_dev_options
+_feature_enabled toggle_security_patch && sh "$MODDIR/features/security_patch.sh"
+disable_bootloader_spoofer
+_feature_enabled toggle_suspicious_props && sh "$MODDIR/features/suspicious_props.sh"
+_feature_enabled toggle_rom_spoof && block_rom_spoof_engines
 
 # Dynamic module description
 _release=$(getprop ro.build.version.release 2>/dev/null || echo "Unknown")
@@ -318,24 +336,50 @@ set -e
 MODDIR=${0%/*}
 . "$MODDIR/lib/common.sh"
 . "$MODDIR/lib/package_list.sh"
+. "$MODDIR/lib/paths.sh"
+. "$MODDIR/lib/config_env.sh"
+detect_root_solution
 
-# Immediate ro.* property resets
-resetprop_if_diff ro.boot.vbmeta.device_state locked
-# ... (all ro.* props) ...
+log "SERVICE" "Setting boot properties"
+
+_feature_enabled() { [ "$(cfg_get "$1" "${2:-1}")" != "0" ]; }
+
+# Early boot props (immediate, no wait)
+apply_boot_props
+
+# Protect SELinux policy files
+if [ "$(toybox cat /sys/fs/selinux/enforce 2>/dev/null)" = "0" ]; then
+  chmod 640 /sys/fs/selinux/enforce 2>/dev/null || true
+  chmod 440 /sys/fs/selinux/policy 2>/dev/null || true
+fi
 
 # KernelSU/APatch: exit early - boot-completed.sh handles post-boot
 [ "$KSU" = "true" ] && exit 0
 
 # Magisk: poll sys.boot_completed for settings that need a booted system
 while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 1; done
-apply_boot_hardening
 
-# GMS killer
-for _pkg in $GMS_KILL_LIST; do am force-stop "$_pkg" 2>/dev/null || true; done
-hide_recovery_folders
+_feature_enabled toggle_boot_hardening && {
+  apply_boot_hardening
+  chmod 440 /proc/cmdline 2>/dev/null || true
+  chmod 440 /proc/net/unix 2>/dev/null || true
+  find /vendor/bin /system/bin -name install-recovery.sh -exec chmod 440 {} + 2>/dev/null || true
+  chmod 750 /system/addon.d 2>/dev/null || true
+}
+_feature_enabled toggle_dev_options 0 && disable_dev_options
+
+_feature_enabled toggle_recovery && hide_recovery_folders
+_feature_enabled toggle_security_patch && sh "$MODDIR/features/security_patch.sh"
+_feature_enabled toggle_suspicious_props && sh "$MODDIR/features/suspicious_props.sh"
+_feature_enabled toggle_rom_spoof && ( block_rom_spoof_engines ) &
 
 # Delayed re-spoof after 120s
-( sleep 120; resetprop_if_diff ro.crypto.state encrypted; ... ) &
+( sleep 120; sp_try ro.crypto.state encrypted; sp_try ro.build.tags release-keys; hide_recovery_folders ) &
+
+# Periodic suspicious props cleaning every hour
+_feature_enabled toggle_suspicious_props && (
+  while true; do sleep 3600; sh "$MODDIR/features/suspicious_props.sh" >/dev/null 2>&1 || true; done
+) &
 ```
 
 **Boot script order:**
@@ -488,12 +532,11 @@ export default defineConfig({
 ```sh
 log()                          # Tagged logging: "[FEATURE] message"
 die()                          # log + exit 1
-download()                     # curl with wget fallback, optional sha256 verify
+download()                     # wget with curl fallback, optional sha256 verify
 check_network()                # Connectivity check via ping + HTTP
 check_prop()                   # On-demand prop set (no boot-safe guards — see Boot Safety Contract)
-resetprop_if_diff()            # Conditional prop set if different (boot-safe, has 2>/dev/null || true)
-resetprop_if_match()           # Conditional prop set if matches pattern (boot-safe)
-persistprop()                  # Persistent prop set + backup — NOT safe at boot
+sp_try()                       # Conditional prop set (2-arg: set if differs; 3-arg: set if contains needle)
+sp_persist()                   # Persistent prop set + backup for uninstall restoration — NOT safe at boot
 hide_recovery_folders()        # Remove/hide TWRP/OrangeFox/PBRP folders from /sdcard
 apply_prop_hardening()         # Lock down security props — on-demand only, NEVER at boot
 apply_boot_hardening()         # settings put + resetprop for security hardening (boot-safe)
@@ -502,18 +545,29 @@ _is_teesimulator()             # Detect TEESimulator by checking for spoof_build
 ensure_dir()                   # mkdir -p
 _escape_json()                 # Sanitize string for JSON embedding
 version_ge()                   # Semantic version comparison (awk-based)
+decode_keybox_blob()           # Custom shuffled-base64 decode for keybox delivery obfuscation
+decode_keybox_serial()         # Extract serial from keybox certificate (base64 → DER → hex)
+check_google_revocation()      # Check keybox serial against Google's attestation endpoint
+find_kmInstallKeybox()         # Locate KmInstallKeybox vendor binary for Widevine
 hexpatch_deleteprop()          # Binary-level prop deletion via magiskboot hexpatch (stealth)
 run_device_info()              # Find and execute device-info.sh across possible paths
-_parse_serial()                # Parse ASN.1 DER-encoded certificate serial
-decode_keybox_serial()         # Extract serial from keybox certificate (base64 → hex → DER)
-check_google_revocation()      # Check keybox serial against Google's attestation endpoint
-find_kmInstallKeybox()         # Locate KmInstallKeybox vendor binary
 
-disable_rom_spoof_engines()    # Detect and disable ROM spoof engines (pihooks/pixelprops/entryhooks) — data-driven
-block_rom_spoof_engines()      # Background-safe ROM spoof engine blocker (data-driven map, uses sp_persist)
-disable_bootloader_spoofer()   # Detect and remove es.chiteroman.bootloaderspoofer + wppenhacer config (uses cmd or pm fallback)
-resolve_conflicts()            # Auto-detect conflicting modules and resolve via config choice (rename scripts or adapt Specter)
-STD_ALPHABET / SHUFFLED_ALPHABET  # Custom base64 alphabet for keybox delivery obfuscation
+block_rom_spoof_engines()       # Background-safe ROM spoof engine blocker (data-driven map, uses sp_persist)
+disable_bootloader_spoofer()    # Detect and remove es.chiteroman.bootloaderspoofer + wppenhacer config (uses cmd or pm fallback)
+
+# Conflict resolution system
+_conflict_registry()            # Data table: id|name|scripts|features|type (aggressive/passive)
+_conflict_detect()              # Check if a conflicting module is installed
+_conflict_choice()              # Read stored priority from config
+_conflict_rename_bak()          # Rename a script to .bak
+_conflict_restore_bak()         # Restore a .bak back to original
+_conflict_apply_scripts()       # Rename or restore all scripts for a module
+migrate_conflict_config()       # Migrate v1.3.0 config format to current
+resolve_conflicts()             # Main entry: detect + auto-resolve by type (runs in post-fs-data.sh)
+_conflict_claimed()             # Check if any module claims a specific feature
+apply_conflict_toggles()        # Recalculate all Specter toggles based on conflict state
+conflict_status_json()          # Emit detected conflicts as JSON for WebUI
+conflict_set_choice()           # Change priority from WebUI
 ```
 
 ### `lib/config_env.sh` - Config Persistence
@@ -539,12 +593,13 @@ TOOL_APPS            # 9 tool/root apps
 ```sh
 KEYBOX_URL="https://rawbin.netlify.app/key"
 ATTESTATION_URL="https://rawbin.netlify.app/clips/attestation"
-HMA_CONFIG_URL="https://rawbin.netlify.app/clips/config"
+HMA_CONFIG_URL="https://rawbin.netlify.app/clips/hma"
 CATALOG_URL="https://rawbin.netlify.app/key/catalog"
-GOOGLE_REVOCATION_URL="https://android.googleapis.com/attestation/status?encrypted=1"
+GOOGLE_REVOCATION_URL="https://android.googleapis.com/attestation/status?encrypted=0"
 RKA_HOST="rp.mhmrdd.me"
 RKA_TCP=59416
 RKA_TOKEN="${RKA_TOKEN:-yurikey-5b70e270d6d69cd399c59ca3d62ccf6e}"
+FALLBACK_KEYBOXES="Yuri/8 OGCOMPLEX/1 Trigon/1 Evokerr/1 Fateh/1"
 ```
 
 ### `lib/paths.sh` - Path Constants
@@ -627,22 +682,26 @@ Async translation loader using `lang/*.json` files. English uses `source/string.
 . "$MODPATH/lib/urls.sh"
 . "$MODPATH/lib/paths.sh"
 
-# Vol key listener (no `local` keyword - pure POSIX sh)
+# Vol key listener with timeout (defaults 5s) — returns 0=UP, 1=DOWN, 2=TIMEOUT
 _vol() {
-  while true; do
-    _vol_key=$(getevent -qlc 1 2>/dev/null)
-    case "$_vol_key" in
-      *KEY_VOLUMEUP*)   unset _vol_key; return 0 ;;
-      *KEY_VOLUMEDOWN*) unset _vol_key; return 1 ;;
-      *KEY_POWER*)      unset _vol_key; return 2 ;;
-    esac
-    unset _vol_key
-  done
+    _vt="${1:-5}" _vw=0
+    while [ $_vw -lt $_vt ]; do
+        _vk=$(timeout 1 getevent -qlc 1 2>/dev/null)
+        if [ -n "$_vk" ]; then
+            case "$_vk" in
+                *KEY_VOLUMEUP*)   unset _vt _vw _vk; return 0 ;;
+                *KEY_VOLUMEDOWN*) unset _vt _vw _vk; return 1 ;;
+            esac
+        fi
+        _vw=$((_vw + 1))
+    done
+    unset _vt _vw _vk
+    return 2
 }
 
-# Optional keybox install with vol key prompt
-# Write module_paths.json for WebUI path discovery
-# Bootstrap device info
+# Keybox: timeout defaults to Yes — installs a keybox automatically
+# target.txt: timeout defaults to Yes — generates automatically
+# Conflicts: fully automatic at boot — no interactive prompts
 ```
 
 ---
@@ -650,21 +709,20 @@ _vol() {
 ## Feature Reference
 
 | Feature | Pipeline | Description | Prerequisites |
-|---|---|---|---|
-| `gms.sh` | full_integrity | Force-stop + clear Play Store cache | None |
+|---|---|---|---|---|
+| `kill_play_store.sh` | full_integrity | Force-stop + clear Play Store | None |
 | `target.sh` | full_integrity | Generate Tricky Store target.txt | Tricky Store |
 | `security_patch.sh` | full_integrity | Spoof security patch date to previous month | Tricky Store |
 | `keybox.sh` | full_integrity | Download, validate (keys + ID), check Google revocation, install keybox | Network, Tricky Store |
 | `pif.sh` | full_integrity? | Update Play Integrity Fix fingerprint | Network, PIF installed |
 | `hma.sh` | root_hide | Deploy HMA-OSS config | Network, HMA-OSS installed |
 | `zygisk_next.sh` | root_hide? | Configure Zygisk Next (denylist, memory) | Zygisk Next |
-| `rka.sh` | - | Provision Remote Key Attestation config | PassIt installed |
+| `rka.sh` | - | Provision Remote Key Attestation config | PlayStrong installed |
 | `cleanup.sh` | - | Clear detector traces, temp files, ADB props | Boot completed |
 | `kill_all.sh` | - | Force-stop + clear all detector + GMS apps | None |
 | `widevine.sh` | - | Download attestation key + run KmInstallKeybox | Network, Qualcomm device |
 | `lsposed.sh` | - | Delete LSPosed base.odex traces | None |
 | `twrp.sh` | - | Delete TWRP folder on internal storage | None |
-| `suspicious_props.sh` | - | Scan for leftover persistent props from modding tools, Xposed, debug state | None |
 | `suspicious_props.sh` | - | Scan for leftover persistent props from modding tools, Xposed, debug state | None |
 | `keybox_info.sh` | - | Check keybox version + Google revocation status | None |
 
@@ -771,7 +829,8 @@ Same build + extract version from changelog, create GitHub Release.
 ## File Count Summary
 
 - `lib/` - 5 files (paths, urls, common, config_env, package_list)
+- `features/` - 16 feature scripts
 - `pipelines/` - 2 text files (full_integrity, root_hide)
 - `rka/` - 1 file (jsonarray.sh)
 - `webroot/` - index.html, config.json, css/app.css, 21 TypeScript modules, 5 lang files, 3 json files, 2 assets, 4 common scripts
-- Root scripts - customize.sh, service.sh, boot-completed.sh, uninstall.sh, action.sh, orchestrator.sh (6 files)
+- Root scripts - customize.sh, service.sh, post-fs-data.sh, boot-completed.sh, uninstall.sh, action.sh, orchestrator.sh (7 files)

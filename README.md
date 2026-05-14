@@ -40,7 +40,7 @@ If Specter helps you out, consider supporting the project:
 
 - **Keybox**: multi-source catalog, custom keybox (file/URL/path), Google revocation checking, private keybox support, backup and restore
 - **Tools**: target.txt, App Targeting (per-app states + blacklist), security patch, TEESimulator support, GMS kill, PIF fix, HMA-OSS / Zygisk Next / RKA configs, detection cleanup, Widevine L1
-- **Control**: per-feature toggles (boot hardening, bootloader spoofer block, ROM spoof blocking, LSPosed clean, recovery hide, action pipeline steps), conflict resolution management (NoHello, TSupport-Advance, TreatWheel, Sensitive Props, Yurikey, Integrity Box)
+- **Control**: per-feature toggles (boot hardening, bootloader spoofer block, ROM spoof blocking, LSPosed clean, recovery hide, action pipeline steps), automatic conflict resolution (aggressive: TSupport-Advance/Yurikey/Integrity Box disabled; passive: TreatWheel/NoHello/Sensitive Props coexist)
 - **Settings**: theme (dark/light/auto + 9 color presets + Monet), language, dev mode with terminal, project contributors
 
 ## Requirements

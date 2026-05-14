@@ -1,5 +1,43 @@
 # Specter Changelog
 
+## v1.3.2
+
+### TEE Status Detection Fix
+
+- **Fixed TEE status not showing on Home page**: `device-info.sh` now checks both `tee_status` (Yurikey format) and `tee_status.txt` (TEESimulator format). Also accepts both `teeBroken=` and `tee_broken=` key names. Previously only looked for `tee_status` with `teeBroken=`, always returning "Unknown" on TEESimulator.
+- **`target.sh`**: same fix — tries both filenames and both key formats for the `teeBroken` variable used in conditional targeting.
+
+### Conflict Resolution — Complete Overhaul
+
+- **Conflict type system** (`common.sh`): registry entries now have a 5th `type` field — `aggressive` (100% overlap, full replacement) vs `passive` (partial overlap, complementary). All registry-parsing functions (`resolve_conflicts`, `_conflict_claimed`, `conflict_set_choice`, `conflict_status_json`, `migrate_conflict_config`) updated to handle the new field.
+- **Aggressive modules** (TSupport-Advance, Yurikey, Integrity Box): silently renamed to `.bak` at boot — Specter always takes priority, no user prompt needed.
+- **Passive modules** (TreatWheel, NoHello, Sensitive Props): scripts are **never renamed**. Both modules coexist. Specter automatically defers its overlapping features by disabling the relevant toggles. User is informed via boot log.
+- **`_conflict_claimed()`** — passive-type modules always claim their features (they keep running). Aggressive modules only claim if user explicitly set `priority_module`.
+- **`conflict_set_choice()`** — passive modules skip script rename/restore operations entirely. Only toggles are recalculated.
+- **`conflict_status_json()`** — JSON response now includes a `type` field for each detected conflict.
+- **Bug fix in `resolve_conflicts()`**: aggressive modules now call `cfg_set "conflict_$_rc_id" "priority_specter"` alongside the script rename. Previously, if a user had `priority_module` stored from an older version, `_conflict_claimed()` would still read the stale choice and disable Specter's overlapping features — even though the conflicting module's scripts were already renamed. Result: neither module handled the feature.
+
+### Fixed Feature Claims
+
+- **Treat Wheel** (`_conflict_registry`): corrected from `boot_hardening,rom_spoof,suspicious_props` to just `boot_hardening`. Treat Wheel does not block ROM spoof engines or clean suspicious props.
+- **Sensitive Props** (`_conflict_registry`): corrected from `boot_hardening,suspicious_props,rom_spoof` to `boot_hardening,suspicious_props`. Sensitive Props does not handle ROM spoof engines.
+
+### Developer Options Toggle — Default Off
+
+- **`toggle_dev_options` now defaults to `0`** (disabled). No longer disables developer options at boot unless the user explicitly enables the toggle in Control.
+- **`_feature_enabled()` in `service.sh`** now accepts an optional 2nd argument as the default value (`"${2:-1}"`), allowing per-toggle default overrides.
+- **`_feature_enabled()` bug fix in `boot-completed.sh`** — the function was used but never defined, causing all boot-completed feature gating to fail silently on KernelSU/APatch. Now properly defined.
+
+### Tricky Addon Guard Removed
+
+- **Removed hardcoded TA_utl suspension** from `target.sh`. Specter now generates `target.txt` normally regardless of whether Tricky Addon is installed. The Interactive App Targeting sentinel (`target_applied`) still protects the manual overlay.
+
+### Installer — No Interactive Conflict Prompts
+
+- **Removed all volume-key conflict prompts** from `customize.sh`. No more asking the user to choose priority for each detected module. Resolution is fully automatic at boot.
+- **Keybox default changed to Yes**: timeout now installs a keybox instead of skipping. `"Vol Down = No (defaults to Yes in 5s)"`.
+- **target.txt default changed to Yes**: timeout now generates target.txt instead of skipping. Same prompt pattern.
+
 ## v1.3.1
 
 ### WebUI Refactoring — Complete Restructure

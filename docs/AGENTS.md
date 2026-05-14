@@ -33,9 +33,23 @@ find src/ -name '*.sh' -exec shellcheck {} +
 |---|---|
 | `features/*.sh` | `exit` (run as subprocess) |
 | `orchestrator.sh`, `service.sh`, `boot-completed.sh` | `exit` |
+| `post-fs-data.sh` | `exit` (subprocess, blocking stage) |
 | `customize.sh`, `uninstall.sh` | `return` (sourced by installer) |
 | `action.sh` | `exit` (standalone - Magisk/KSU runs as subprocess) |
 | `lib/*.sh` | Never call `exit` or `return` at top level |
+
+### Feature Gating
+
+Boot scripts use `_feature_enabled()` for toggle guards:
+
+```sh
+_feature_enabled() { [ "$(cfg_get "$1" "${2:-1}")" != "0" ]; }
+
+_feature_enabled toggle_boot_hardening && apply_boot_hardening
+_feature_enabled toggle_dev_options 0 && disable_dev_options  # default off
+```
+
+The second argument is the default value (defaults to `1` if omitted).
 
 ### Path Resolution
 

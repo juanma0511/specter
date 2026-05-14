@@ -9,7 +9,7 @@ detect_root_solution
 
 log "SERVICE" "Setting boot properties"
 
-_feature_enabled() { [ "$(cfg_get "$1" 1)" != "0" ]; }
+_feature_enabled() { [ "$(cfg_get "$1" "${2:-1}")" != "0" ]; }
 
 # Early boot props (immediate, no wait)
 apply_boot_props
@@ -45,7 +45,7 @@ _feature_enabled toggle_boot_hardening && {
   find /vendor/bin /system/bin -name install-recovery.sh -exec chmod 440 {} + 2>/dev/null || true
   chmod 750 /system/addon.d 2>/dev/null || true
 }
-_feature_enabled toggle_dev_options && disable_dev_options
+_feature_enabled toggle_dev_options 0 && disable_dev_options
 log "SERVICE" "Boot hardening applied"
 
 

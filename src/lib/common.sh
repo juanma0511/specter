@@ -485,12 +485,12 @@ CONFLICT_BACKUP_FILE="/data/adb/Specter/conflict_backups.txt"
 
 _conflict_registry() {
   cat <<'EOF'
-zygisk_nohello|NoHello|/data/adb/modules/zygisk_nohello/service.sh|boot_hardening
-tsupport-advance|TSupport-Advance|/data/adb/modules/tsupport-advance/post-fs-data.sh,/data/adb/modules/tsupport-advance/service.sh|boot_hardening,security_patch,suspicious_props,lsposed,rom_spoof,bootloader_spoofer,target
-treat_wheel|TreatWheel|/data/adb/modules/treat_wheel/service.sh,/data/adb/modules/treat_wheel/service-or-boot-completed.sh|boot_hardening,rom_spoof,suspicious_props
-sensitive_props|Sensitive Props|/data/adb/modules/sensitive_props/service.sh|boot_hardening,suspicious_props,rom_spoof
-Yurikey|Yurikey Manager|/data/adb/modules/Yurikey/service.sh|boot_hardening,security_patch,suspicious_props,rom_spoof
-integritybox|Integrity Box|/data/adb/modules/playintegrityfix/service.sh|boot_hardening,security_patch,suspicious_props,rom_spoof,bootloader_spoofer,target
+zygisk_nohello|NoHello|/data/adb/modules/zygisk_nohello/service.sh|boot_hardening|passive
+tsupport-advance|TSupport-Advance|/data/adb/modules/tsupport-advance/post-fs-data.sh,/data/adb/modules/tsupport-advance/service.sh|boot_hardening,security_patch,suspicious_props,lsposed,rom_spoof,bootloader_spoofer,target|aggressive
+treat_wheel|TreatWheel|/data/adb/modules/treat_wheel/service.sh,/data/adb/modules/treat_wheel/service-or-boot-completed.sh|boot_hardening|passive
+sensitive_props|Sensitive Props|/data/adb/modules/sensitive_props/service.sh|boot_hardening,suspicious_props|passive
+Yurikey|Yurikey Manager|/data/adb/modules/Yurikey/service.sh|boot_hardening,security_patch,suspicious_props,rom_spoof|aggressive
+integritybox|Integrity Box|/data/adb/modules/playintegrityfix/service.sh|boot_hardening,security_patch,suspicious_props,rom_spoof,bootloader_spoofer,target|aggressive
 EOF
 }
 
@@ -545,7 +545,7 @@ _conflict_apply_scripts() {
 migrate_conflict_config() {
   _mc_old_dir="/data/adb/Specter/config"
   [ -d "$_mc_old_dir" ] || return 0
-  while IFS='|' read -r _mc_id _mc_name _mc_scripts _mc_features; do
+  while IFS='|' read -r _mc_id _mc_name _mc_scripts _mc_features _mc_type; do
     [ -z "$_mc_id" ] && continue
     _mc_old_file="$_mc_old_dir/conflict_$_mc_id.val"
     [ -f "$_mc_old_file" ] || continue
@@ -559,7 +559,7 @@ migrate_conflict_config() {
   done <<EOF
 $(_conflict_registry)
 EOF
-  unset _mc_old_dir _mc_id _mc_name _mc_scripts _mc_features _mc_old_file _mc_current _mc_old_val
+  unset _mc_old_dir _mc_id _mc_name _mc_scripts _mc_features _mc_type _mc_old_file _mc_current _mc_old_val
 }
 
 resolve_conflicts() {
@@ -571,37 +571,56 @@ resolve_conflicts() {
   # Always block BootloaderSpoofer — archived since 2024
   disable_bootloader_spoofer
 
-  # === PASS 1: Process all script renames/restores (independent per module) ===
-  while IFS='|' read -r _rc_id _rc_name _rc_scripts _rc_features; do
+  while IFS='|' read -r _rc_id _rc_name _rc_scripts _rc_features _rc_type; do
     [ -z "$_rc_id" ] && continue
     _conflict_detect "$_rc_id" || continue
-    _rc_choice="$(_conflict_choice "$_rc_id")"
-    _conflict_apply_scripts "$_rc_scripts" "$_rc_choice"
-    log "CONFLICT" "$_rc_name: $_rc_choice"
-  done <<EOF
-$(_conflict_registry)
-EOF
-  unset _rc_id _rc_name _rc_scripts _rc_features _rc_choice
 
-  # === PASS 2: Apply conflict toggles (disable only) ===
-  apply_conflict_toggles
-}
-
-# Check if ANY installed conflicting module with priority_module claims a feature
-_conflict_claimed() {
-  _cc_feature="$1"
-  _cc_claimed=1
-  while IFS='|' read -r _cc_id _cc_name _cc_scripts _cc_features; do
-    [ -z "$_cc_id" ] && continue
-    _conflict_detect "$_cc_id" || continue
-    [ "$(_conflict_choice "$_cc_id")" = "priority_module" ] || continue
-    case ",$_cc_features," in
-      *",$_cc_feature,"*) _cc_claimed=0; break ;;
+    case "$_rc_type" in
+      aggressive)
+        # 100% overlap — silently disable the other module, Specter handles it
+        _conflict_apply_scripts "$_rc_scripts" "priority_specter"
+        cfg_set "conflict_$_rc_id" "priority_specter"
+        log "CONFLICT" "$_rc_name: 100% overlap — disabled, Specter covers all"
+        ;;
+      passive)
+        # Partial overlap — both coexist, Specter defers its overlapping features
+        log "CONFLICT" "$_rc_name: partial overlap — Specter deferred: $_rc_features"
+        ;;
     esac
   done <<EOF
 $(_conflict_registry)
 EOF
-  unset _cc_id _cc_name _cc_scripts _cc_features
+  unset _rc_id _rc_name _rc_scripts _rc_features _rc_type
+
+  apply_conflict_toggles
+}
+
+# Check if ANY installed conflicting module claims a feature
+_conflict_claimed() {
+  _cc_feature="$1"
+  _cc_claimed=1
+  while IFS='|' read -r _cc_id _cc_name _cc_scripts _cc_features _cc_type; do
+    [ -z "$_cc_id" ] && continue
+    _conflict_detect "$_cc_id" || continue
+    case ",$_cc_features," in
+      *",$_cc_feature,"*) ;;
+      *) continue ;;
+    esac
+    case "$_cc_type" in
+      passive)
+        # Module keeps running — always claim its features
+        _cc_claimed=0; break
+        ;;
+      aggressive)
+        # Only claim if user (or auto-resolution) gave it priority
+        [ "$(_conflict_choice "$_cc_id")" = "priority_module" ] || continue
+        _cc_claimed=0; break
+        ;;
+    esac
+  done <<EOF
+$(_conflict_registry)
+EOF
+  unset _cc_id _cc_name _cc_scripts _cc_features _cc_type
   return $_cc_claimed
 }
 
@@ -624,7 +643,7 @@ conflict_status_json() {
   migrate_conflict_config
   _cs_first=1
   printf '['
-  while IFS='|' read -r _cs_id _cs_name _cs_scripts _cs_features; do
+  while IFS='|' read -r _cs_id _cs_name _cs_scripts _cs_features _cs_type; do
     [ -z "$_cs_id" ] && continue
     _conflict_detect "$_cs_id" || continue
     _cs_choice="$(_conflict_choice "$_cs_id")"
@@ -632,12 +651,12 @@ conflict_status_json() {
     [ "$_cs_choice" = "priority_module" ] && _cs_priority=false
     _cs_name_json="$(_escape_json "$_cs_name")"
     if [ "$_cs_first" -eq 0 ]; then printf ','; else _cs_first=0; fi
-    printf '{"key":"%s","friendlyName":"%s","detected":true,"prioritySpecter":%s}' "$_cs_id" "$_cs_name_json" "$_cs_priority"
+    printf '{"key":"%s","friendlyName":"%s","detected":true,"prioritySpecter":%s,"type":"%s"}' "$_cs_id" "$_cs_name_json" "$_cs_priority" "$_cs_type"
   done <<EOF
 $(_conflict_registry)
 EOF
   printf ']'
-  unset _cs_first _cs_id _cs_name _cs_scripts _cs_features _cs_choice _cs_priority _cs_name_json
+  unset _cs_first _cs_id _cs_name _cs_scripts _cs_features _cs_type _cs_choice _cs_priority _cs_name_json
 }
 
 conflict_set_choice() {
@@ -650,12 +669,13 @@ conflict_set_choice() {
   ensure_dir "$SPECTER_DIR"
   touch "$CONFLICT_BACKUP_FILE" 2>/dev/null || true
   _csc_found=1
-  while IFS='|' read -r _csc_id _csc_name _csc_scripts _csc_features; do
+  while IFS='|' read -r _csc_id _csc_name _csc_scripts _csc_features _csc_type; do
     [ -z "$_csc_id" ] && continue
     [ "$_csc_id" = "$_csc_key" ] || continue
     _csc_found=0
     cfg_set "conflict_$_csc_id" "$_csc_choice"
-    if _conflict_detect "$_csc_id"; then
+    # Only rename scripts for aggressive-type modules
+    if _conflict_detect "$_csc_id" && [ "$_csc_type" = "aggressive" ]; then
       _conflict_apply_scripts "$_csc_scripts" "$_csc_choice"
     fi
     apply_conflict_toggles
@@ -663,7 +683,7 @@ conflict_set_choice() {
   done <<EOF
 $(_conflict_registry)
 EOF
-  unset _csc_key _csc_choice _csc_id _csc_name _csc_scripts _csc_features
+  unset _csc_key _csc_choice _csc_id _csc_name _csc_scripts _csc_features _csc_type
   return $_csc_found
 }
 

@@ -53,12 +53,17 @@ if [ "$_ts_found" = true ]; then
   ui_print ""
   ui_print " Install a keybox?"
   ui_print "  Vol Up   = Yes"
-  ui_print "  Vol Down = No (default in 8s)"
+  ui_print "  Vol Down = No (defaults to Yes in 5s)"
   ui_print ""
 
   _vol; _choice=$?
   case $_choice in
-    0)
+    1)
+      ui_print "- Skipping keybox installation."
+      ui_print "- Install from the action button or WebUI later."
+      rm -f "$TEMP_FILE" "$DECODE_FILE" 2>/dev/null
+      ;;
+    *)
       ui_print "- Installing keybox..."
       if check_network; then
         ( download "$KEYBOX_URL" > "$TEMP_FILE" ) & _dl_pid=$!
@@ -99,12 +104,6 @@ if [ "$_ts_found" = true ]; then
         ui_print "- You can download a keybox later from the action button or WebUI."
       fi
       ;;
-    1)
-      ui_print "- Skipping keybox installation."
-      ui_print "- Install from the action button or WebUI later."
-      rm -f "$TEMP_FILE" "$DECODE_FILE" 2>/dev/null
-      ;;
-
   esac
   unset _choice
 fi
@@ -113,66 +112,24 @@ unset _ts_found
 ui_print ""
 ui_print " Generate target.txt?"
 ui_print "  Vol Up   = Yes"
-ui_print "  Vol Down = No (default in 8s)"
+ui_print "  Vol Down = No (defaults to Yes in 5s)"
 ui_print ""
 _vol; _tg_choice=$?
 case $_tg_choice in
-  0)
+  1)
+    ui_print "- Skipping target.txt."
+    ;;
+  *)
     ui_print "- Generating target.txt..."
     sh "$MODPATH/features/target.sh" && \
       ui_print "- target.txt generated" || \
       ui_print "- target.txt generation failed"
     ;;
-  *)  ui_print "- Skipping target.txt." ;;
 esac
 unset _tg_choice
 
 mkdir -p "$MODPATH/webroot/json"
-# Interactive conflict resolution for each detected module
-for _cm_mod in "zygisk_nohello|NoHello" "tsupport-advance|TSupport-Advance" "treat_wheel|TreatWheel" "sensitive_props|Sensitive Props" "Yurikey|Yurikey Manager"; do
-  _cm_id="${_cm_mod%|*}"
-  _cm_name="${_cm_mod#*|}"
-  [ -d "/data/adb/modules/$_cm_id" ] || continue
 
-  ui_print ""
-  ui_print " $_cm_name detected!"
-  ui_print "  Vol Up   = Priority → Specter"
-  ui_print "  Vol Down = Priority → $_cm_name (default in 8s)"
-  ui_print "  (Remove from root manager if you encounter issues)"
-  _vol; _cm_choice=$?
-
-  case $_cm_choice in
-    1) cfg_set "conflict_$_cm_id" "priority_module"
-       ui_print "  → $_cm_name takes priority over Specter" ;;
-    *) cfg_set "conflict_$_cm_id" "priority_specter"
-       ui_print "  → Specter takes priority over $_cm_name"
-       [ $_cm_choice -eq 2 ] && ui_print "  (Timeout — defaulted)"
-       ui_print "  (Remove $_cm_name from your root manager if issues persist)" ;;
-  esac
-  unset _cm_choice
-  # Drain leftover key-up events before next module prompt
-  sleep 0.3 2>/dev/null || usleep 300000 2>/dev/null || true
-done
-# Integrity Box special case — uses playintegrityfix module ID, distinguish by Box-Brain marker
-if [ -d "/data/adb/modules/playintegrityfix" ] && [ -d "/data/adb/Box-Brain" ]; then
-  ui_print ""
-  ui_print " Integrity Box detected!"
-  ui_print "  Vol Up   = Priority → Specter"
-  ui_print "  Vol Down = Priority → Integrity Box (default in 8s)"
-  ui_print "  (Integrity Box conflicts with Specter — remove one if issues persist)"
-  _vol; _ib_choice=$?
-  case $_ib_choice in
-    1) cfg_set "conflict_integritybox" "priority_module"
-       ui_print "  → Integrity Box takes priority over Specter" ;;
-    *) cfg_set "conflict_integritybox" "priority_specter"
-       ui_print "  → Specter takes priority over Integrity Box"
-       [ $_ib_choice -eq 2 ] && ui_print "  (Timeout — defaulted)"
-       ui_print "  (Remove Integrity Box if issues persist)" ;;
-  esac
-  unset _ib_choice
-  sleep 0.3 2>/dev/null || usleep 300000 2>/dev/null || true
-fi
-
-unset _cm_mod _cm_id _cm_name
+# Conflicts are resolved automatically at boot — no interactive prompts needed
 
 return 0

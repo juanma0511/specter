@@ -13,11 +13,6 @@ log "TARGET" "Start"
 
 [ -d "$TRICKY_DIR" ] || die "Tricky Store data directory not found"
 
-if [ -d "/data/adb/modules/TA_utl" ] || [ -d "/data/adb/modules/.TA_utl" ]; then
-  log "TARGET" "Tricky Addon detected, suspending target generation"
-  exit 0
-fi
-
 if _is_teesimulator; then
     log "TARGET" "TEESimulator — generating locked.xml section"
     _cust="/sdcard/Specter/customize.txt"
@@ -50,7 +45,12 @@ _TMP_TARGET="${TARGET_TXT}.new.$$"
 trap 'rm -f "$TEMP_PKGS" "${TEMP_PKGS}.filtered" "$_TMP_TARGET"' EXIT
 
 teeBroken="false"
-[ -f "$TEE_STATUS" ] && teeBroken=$(grep -E '^teeBroken=' "$TEE_STATUS" | cut -d '=' -f2 2>/dev/null || echo "false")
+for _tee_file in "$TEE_STATUS" "${TEE_STATUS}.txt"; do
+  [ -f "$_tee_file" ] || continue
+  teeBroken=$(grep -E '^(teeBroken|tee_broken)=' "$_tee_file" | cut -d= -f2 2>/dev/null || echo "false")
+  break
+done
+unset _tee_file
 log "TARGET" "TEE status: teeBroken=$teeBroken"
 
 BLACKLIST="$SPECTER_DIR/blacklist.txt"

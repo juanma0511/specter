@@ -72,8 +72,8 @@ function applyTeeStatus(data: InfoJson) {
   const el = document.getElementById('tee-value');
   const card = document.getElementById('tee-status-card');
   if (!el || !card) return;
-  const status = data.tee_status || 'unknown';
-  el.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+  const status = data.tee_status || '';
+  el.textContent = status === 'broken' ? 'Broken' : status === 'normal' ? 'Normal' : '—';
   card.className = 'info-card';
   if (status === 'broken') {
     card.classList.add('info-card--warning');

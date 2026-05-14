@@ -11,8 +11,10 @@ detect_root_solution
 
 log "BOOT" "Boot completed - finalizing"
 
+_feature_enabled() { [ "$(cfg_get "$1" "${2:-1}")" != "0" ]; }
+
 _feature_enabled toggle_boot_hardening && apply_boot_hardening
-_feature_enabled toggle_dev_options && disable_dev_options
+_feature_enabled toggle_dev_options 0 && disable_dev_options
 
 log "BOOT" "Running boot-time features..."
 

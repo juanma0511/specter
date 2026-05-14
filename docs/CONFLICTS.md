@@ -1,39 +1,45 @@
 # Conflict Handling Policy
 
 Specter automatically detects conflicting modules and resolves them silently.
-No user prompts during install — all conflict handling is done at boot and
-configurable from the Control page.
+No user prompts during install — all conflict handling is done at boot via
+`post-fs-data.sh`.
 
-## How It Works
+No conflicting modules have their functionality broken. Specter handles conflicts
+by either disabling the other module (aggressive type) or deferring its own
+overlapping features (passive type).
 
-At every boot, `service.sh` calls `resolve_conflicts()` which:
+## Conflict Types
 
-1. **Detects** conflicting modules by checking `/data/adb/modules/<id>/`
-2. **Reads** the user's choice from config (`priority_specter` or `priority_module`)
-3. **Acts** based on the choice:
-   - `priority_specter` (default, toggle OFF): renames the module's boot scripts
-     to `.bak`, preventing them from running. The module stays installed and
-     its Zygisk/native code keeps working.
-   - `priority_module` (toggle ON): Specter disables its own overlapping
-     features via the existing toggle system (`cfg_set toggle_* 0`).
-     The other module's scripts are restored from `.bak` if previously blocked.
+### Aggressive — 100% Overlap
+
+Modules that do **exactly what Specter does**. They are fully redundant and
+keeping both running achieves nothing. Specter silently renames their boot
+scripts to `.bak`, preventing them from executing. The module stays installed
+— its Zygisk/native code continues to work. Specter handles all features.
+
+### Passive — Partial Overlap
+
+Modules with **complementary functionality** that overlaps with Specter on
+specific features. Both modules coexist. Specter automatically disables its
+own overlapping features via the toggle system, deferring to the other module
+for those specific features.
 
 ## Per-Module Table
 
-| Module | ID | Detection | Default | Toggle OFF (Specter) | Toggle ON (Module) |
-|---|---|---|---|---|---|
-| NoHello | `nohello` | `/data/adb/modules/nohello` | OFF — block service.sh | Rename service.sh → .bak (Zygisk stays) | Specter skips boot prop hardening, security patch, suspicious props, LSPosed clean, ROM spoof block |
-| TSupport-Advance | `tsupport-advance` | `/data/adb/modules/tsupport-advance` | OFF — block both boot scripts | Rename post-fs-data.sh + service.sh → .bak | Specter skips all overlapping features (prop hardening, ROM spoof block, target gen, LSPosed clean, etc.) |
-| TreatWheel | `treat_wheel` | `/data/adb/modules/treat_wheel` | OFF — block service.sh | Rename service.sh → .bak (Zygisk stays) | Specter skips boot prop hardening, ROM spoof block, suspicious props |
-| Sensitive Props | `sensitive_props` | `/data/adb/modules/sensitive_props` | OFF — block service.sh | Rename service.sh → .bak | Specter skips boot prop hardening, suspicious props, ROM spoof block |
-| Yurikey Manager | `Yurikey` | `/data/adb/modules/Yurikey` | OFF — block service.sh | Rename service.sh → .bak | Specter skips boot prop hardening, security patch, suspicious props, ROM spoof block |
-| Integrity Box | `integritybox` | `/data/adb/modules/playintegrityfix` + `/data/adb/Box-Brain` | OFF — block service.sh | Rename service.sh → .bak | Specter skips all overlapping features (prop hardening, security patch, suspicious props, ROM spoof, bootloader spoofer, target gen) |
+| Module | ID | Type | Overlapping Features | Specter's Action |
+|---|---|---|---|---|
+| TSupport-Advance | `tsupport-advance` | aggressive | boot_hardening, security_patch, suspicious_props, lsposed, rom_spoof, bootloader_spoofer, target | Rename both post-fs-data.sh + service.sh to .bak. Specter handles everything. |
+| Yurikey Manager | `Yurikey` | aggressive | boot_hardening, security_patch, suspicious_props, rom_spoof | Rename service.sh to .bak. Specter handles everything. |
+| Integrity Box | `integritybox` | aggressive | boot_hardening, security_patch, suspicious_props, rom_spoof, bootloader_spoofer, target | Rename service.sh to .bak. Specter handles everything. |
+| TreatWheel | `treat_wheel` | passive | boot_hardening | Scripts untouched. Specter defers boot_hardening to TreatWheel. |
+| NoHello | `zygisk_nohello` | passive | boot_hardening | Scripts untouched. Specter defers boot_hardening to NoHello. |
+| Sensitive Props | `sensitive_props` | passive | boot_hardening, suspicious_props | Scripts untouched. Specter defers boot_hardening and suspicious_props. |
 
 ## Always Blocked — No Toggle
 
 | Module | Detection | Action |
 |---|---|---|
-| BootloaderSpoofer (`es.chiteroman.bootloaderspoofer`) | `/data/system/packages.list` | `pm uninstall --user 0` — archived since 2024, no one uses it |
+| BootloaderSpoofer (`es.chiteroman.bootloaderspoofer`) | `/data/system/packages.list` | `pm uninstall --user 0` — archived since 2024 |
 
 ## Compatible Modules — Never Blocked
 
@@ -46,6 +52,7 @@ At every boot, `service.sh` calls `resolve_conflicts()` which:
 ## Backup and Restore
 
 Specter keeps a list of renamed scripts at:
+
 ```
 /data/adb/Specter/conflict_backups.txt
 ```
@@ -53,26 +60,15 @@ Specter keeps a list of renamed scripts at:
 On Specter uninstall, all `.bak` files are automatically restored to their
 original names. No permanent changes are made to other modules.
 
-## Warnings
-
-- **Do NOT** manually rename `.bak` files back while Specter is active.
-  They will be re-blocked on the next boot.
-- **Do NOT** run both TSupport-Advance and Specter with both active.
-  They do the same thing. Select one via the Conflict Resolution toggles.
-- **NoHello's Zygisk root hiding** (mount namespace, FD sanitization) keeps
-  working even when its service.sh is blocked. Only the prop spoofing is
-  prevented.
-- **TreatWheel's Zygisk library** stays active when its service.sh is blocked.
-  Only the native prop spoofing daemon is prevented from starting.
-
 ## Do's and Don'ts
 
 ### Do
 - Run Specter with PIF + TrickyStore — designed to work together
-- Use the Control page → Conflict Resolution to manage priorities
-- Check the conflicts section after installing new modules
+- Check the boot log for conflict resolution messages (`logcat | grep CONFLICT`)
 
 ### Don't
-- Manually edit files in `/data/adb/modules/<id>/` while Specter is running
-- Expect both Specter and TSupport-Advance to be fully active simultaneously
-- Remove the `conflict_backups.txt` file — needed for clean uninstall
+- Manually rename `.bak` files back while Specter is active. They will be
+  re-blocked on the next boot.
+- Install both Specter and TSupport-Advance/Yurikey/Integrity Box. They are
+  fully redundant — keep only Specter.
+- Remove the `conflict_backups.txt` file — needed for clean uninstall.
