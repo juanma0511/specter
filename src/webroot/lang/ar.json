@@ -173,8 +173,6 @@
   "control_toggle_boot_hardening_desc": "تطبيق تعزيز خصائص الأمان (ro.secure، ro.debuggable، إلخ) عند الإقلاع",
   "control_toggle_bootloader_spoofer": "حظر مزيف الإقلاع",
   "control_toggle_bootloader_spoofer_desc": "إزالة حزم مزيف الإقلاع المتعارضة عند الإقلاع",
-  "control_toggle_dev_options": "تعطيل خيارات المطور",
-  "control_toggle_dev_options_desc": "تعطيل قائمة خيارات المطور والخصائص عند الإقلاع",
   "control_toggle_lsposed": "تنظيف ODEX الخاص بـ LSPosed",
   "control_toggle_lsposed_desc": "حذف ملفات base.odex من /data/app عند الإقلاع (تنظيف آثار LSPosed)",
   "control_toggle_recovery": "إخفاء مجلدات الاسترداد تلقائياً",

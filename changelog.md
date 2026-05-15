@@ -31,9 +31,9 @@
 - **Treat Wheel** (`_conflict_registry`): corrected from `boot_hardening,rom_spoof,suspicious_props` to just `boot_hardening`. Treat Wheel does not block ROM spoof engines or clean suspicious props.
 - **Sensitive Props** (`_conflict_registry`): corrected from `boot_hardening,suspicious_props,rom_spoof` to `boot_hardening,suspicious_props`. Sensitive Props does not handle ROM spoof engines.
 
-### Developer Options Toggle — Default Off
+### Developer Options Feature Removed
 
-- **`toggle_dev_options` now defaults to `0`** (disabled). No longer disables developer options at boot unless the user explicitly enables the toggle in Control.
+- **Removed `disable_dev_options()` entirely** — the function was unreliable (only set a prop that Android often ignores) and user preference is better left to the user. If someone wants dev options disabled, they can do it themselves.
 - **`_feature_enabled()` in `service.sh`** now accepts an optional 2nd argument as the default value (`"${2:-1}"`), allowing per-toggle default overrides.
 - **`_feature_enabled()` bug fix in `boot-completed.sh`** — the function was used but never defined, causing all boot-completed feature gating to fail silently on KernelSU/APatch. Now properly defined.
 

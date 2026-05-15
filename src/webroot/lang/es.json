@@ -173,8 +173,6 @@
   "control_toggle_boot_hardening_desc": "Aplicar endurecimiento de propiedades de seguridad (ro.secure, ro.debuggable, etc.) al inicio",
   "control_toggle_bootloader_spoofer": "Bloqueo de spoof de bootloader",
   "control_toggle_bootloader_spoofer_desc": "Eliminar paquetes conflictivos de spoof de bootloader al inicio",
-  "control_toggle_dev_options": "Desactivar opciones de desarrollador",
-  "control_toggle_dev_options_desc": "Desactivar menú de opciones de desarrollador y propiedad al inicio",
   "control_toggle_lsposed": "Limpieza ODEX de LSPosed",
   "control_toggle_lsposed_desc": "Eliminar archivos base.odex de /data/app al inicio (limpieza de rastros LSPosed)",
   "control_toggle_recovery": "Ocultar carpetas de recovery automáticamente",

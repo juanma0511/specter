@@ -227,11 +227,6 @@ PROPS
     return 0
 }
 
-disable_dev_options() {
-  settings put global development_settings_enabled 0
-  resetprop -n persist.sys.developer_options 0
-}
-
 apply_boot_hardening() {
   settings put global adb_enabled 0
   settings put global oem_unlock_allowed 0

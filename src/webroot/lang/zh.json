@@ -173,8 +173,6 @@
   "control_toggle_boot_hardening_desc": "在启动时应用安全属性加固（ro.secure、ro.debuggable 等）",
   "control_toggle_bootloader_spoofer": "阻止 Bootloader 欺骗",
   "control_toggle_bootloader_spoofer_desc": "在启动时移除冲突的 bootloader 欺骗包",
-  "control_toggle_dev_options": "禁用开发者选项",
-  "control_toggle_dev_options_desc": "在启动时禁用开发者选项菜单和属性",
   "control_toggle_lsposed": "LSPosed ODEX 清理",
   "control_toggle_lsposed_desc": "在启动时删除 /data/app 中的 base.odex 文件（LSPosed 痕迹清理）",
   "control_toggle_recovery": "自动隐藏 Recovery 文件夹",
