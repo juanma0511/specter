@@ -29,6 +29,8 @@
   "advance_menu_title_config": "Configuraciones del módulo",
   "advance_clear_all_detection_traces": "Limpiar todos los rastros de detección",
   "advance_clear_all_detection_traces_desc": "Elimina datos de apps detectoras, archivos temporales, restablece propiedades, elimina ODEX",
+  "advance_fix_detect_pif": "Solucionar Detección PIF",
+  "advance_fix_pif_desc": "Elimina propiedades relacionadas con PIF mediante resetprop",
   "advance_kill_all": "Matar todos los procesos",
   "advance_kill_all_desc": "Detiene forzosamente y limpia datos de todas las apps detectoras conocidas",
   "control_toggle_action_pif": "Establecer huella digital (PIF)",

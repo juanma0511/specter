@@ -29,6 +29,8 @@
   "advance_menu_title_config": "إعدادات الوحدة",
   "advance_clear_all_detection_traces": "مسح كافة آثار الكشف",
   "advance_clear_all_detection_traces_desc": "حذف بيانات تطبيقات الكشف والملفات المؤقتة وإعادة تعيين الخصائص وإزالة ODEX",
+  "advance_fix_detect_pif": "إصلاح كشف PIF",
+  "advance_fix_pif_desc": "إزالة خصائص PIF ذات الصلة عبر resetprop",
   "advance_kill_all": "إنهاء كافة العمليات",
   "advance_kill_all_desc": "إيقاف قسري ومسح بيانات جميع تطبيقات الكشف المعروفة",
   "control_toggle_action_pif": "تعيين البصمة (PIF)",

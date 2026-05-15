@@ -29,6 +29,8 @@
   "advance_menu_title_config": "Module Configs",
   "advance_clear_all_detection_traces": "Clear All Detection Traces",
   "advance_clear_all_detection_traces_desc": "Deletes detector app data, temp files, resets props, removes ODEX",
+  "advance_fix_detect_pif": "Fix PIF Detection",
+  "advance_fix_pif_desc": "Removes PIF-related properties via resetprop",
   "advance_kill_all": "Kill All Processes",
   "advance_kill_all_desc": "Force-stops and clears data for all known detector apps",
   "control_toggle_action_pif": "Set Fingerprint (PIF)",

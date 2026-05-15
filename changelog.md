@@ -1,5 +1,14 @@
 # Specter Changelog
 
+## v1.3.3
+
+### Fix PIF Detection — Restored & Consolidated
+
+- **Restored "Fix PIF Detection" button** in Tools page — re-added `pif2.sh` feature script, webui bridge, UI card, and all 5 language translations. The button was removed in v1.3.0 with the claim that boot-time `block_rom_spoof_engines` made it redundant.
+- **Root cause**: the boot function only set guard persist props (preventative) but never deleted existing spoof engine traces. Active `pihook`/`pixelprops` properties from ROM-level spoof engines remained in memory and were still detectable.
+- **Moved active deletion into `block_rom_spoof_engines()`** (`common.sh`): the shared library function now also removes existing `pihook`/`pixelprops` properties via `resetprop -p --delete`. This runs at boot AND when the button is pressed — single source of truth.
+- Boot (`service.sh` / `boot-completed.sh`) and webui button (`pif2.sh`) now call the same `block_rom_spoof_engines()` with identical behavior.
+
 ## v1.3.2
 
 ### TEE Status Detection Fix

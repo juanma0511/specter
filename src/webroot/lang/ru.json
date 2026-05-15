@@ -29,6 +29,8 @@
   "advance_menu_title_config": "Конфигурации модуля",
   "advance_clear_all_detection_traces": "Очистить все следы обнаружения",
   "advance_clear_all_detection_traces_desc": "Удаляет данные приложений-детекторов, временные файлы, сбрасывает свойства, удаляет ODEX",
+  "advance_fix_detect_pif": "Исправить обнаружение PIF",
+  "advance_fix_pif_desc": "Удаляет свойства, связанные с PIF, через resetprop",
   "advance_kill_all": "Завершить все процессы",
   "advance_kill_all_desc": "Принудительно останавливает и очищает данные всех известных приложений-детекторов",
   "control_toggle_action_pif": "Установить отпечаток (PIF)",

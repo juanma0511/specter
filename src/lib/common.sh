@@ -459,6 +459,13 @@ MAP
     resetprop persist.sys.spoof.gms false 2>/dev/null || true
   fi
 
+  while IFS= read -r _brs_prop; do
+    [ -z "$_brs_prop" ] && continue
+    resetprop -p --delete "$_brs_prop" 2>/dev/null || true
+  done << BRS_PROPS
+$(getprop 2>/dev/null | grep -E "pihook|pixelprops" | sed "s/^\[\(.*\)\]:.*/\1/" || true)
+BRS_PROPS
+
   unset _brs_gate _brs_prop _brs_val
 }
 

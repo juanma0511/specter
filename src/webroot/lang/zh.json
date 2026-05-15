@@ -29,6 +29,8 @@
   "advance_menu_title_config": "模块配置",
   "advance_clear_all_detection_traces": "清除所有检测痕迹",
   "advance_clear_all_detection_traces_desc": "删除检测器应用数据、临时文件、重置属性、移除 ODEX",
+  "advance_fix_detect_pif": "修复 PIF 检测",
+  "advance_fix_pif_desc": "通过 resetprop 移除 PIF 相关属性",
   "advance_kill_all": "终止全部进程",
   "advance_kill_all_desc": "强制停止并清除所有已知检测器应用的数据",
   "control_toggle_action_pif": "设置指纹 (PIF)",
