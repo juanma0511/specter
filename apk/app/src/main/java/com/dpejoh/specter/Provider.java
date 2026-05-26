@@ -1,4 +1,4 @@
-package io.github.dpejoh.specter;
+package com.dpejoh.specter;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -12,7 +12,7 @@ import android.util.Log;
 
 public class Provider extends ContentProvider {
     private static final String TAG = "Specter";
-    private static final String AUTHORITY = "io.github.dpejoh.specter";
+    private static final String AUTHORITY = "com.dpejoh.specter";
 
     private volatile AttestationHelper helper;
     private volatile boolean attested;

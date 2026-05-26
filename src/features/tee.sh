@@ -6,7 +6,7 @@ MODDIR=${0%/*}
 . "$MODDIR/../lib/vbmeta.sh"
 
 APK="$MODDIR/../apk/specter.apk"
-PACKAGE="io.github.dpejoh.specter"
+PACKAGE="com.dpejoh.specter"
 BOOT_HASH_FILE="/data/adb/boot_hash"
 
 log "TEE" "Start"

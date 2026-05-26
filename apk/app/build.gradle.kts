@@ -12,11 +12,11 @@ val alias = if (hasSecrets) secrets.readText().lineSequence()
     .find { it.startsWith("keyAlias=") }?.substringAfter("=")?.trim() ?: "release" else "release"
 
 android {
-    namespace = "io.github.dpejoh.specter"
+    namespace = "com.dpejoh.specter"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.dpejoh.specter"
+        applicationId = "com.dpejoh.specter"
         minSdk = 28
         targetSdk = 35
         versionCode = 1

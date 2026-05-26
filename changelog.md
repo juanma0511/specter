@@ -41,7 +41,8 @@
 - OEM unlock toggle no longer suppressed — `ro.oem_unlock_supported`, `sys.oem_unlock_allowed`, and `settings put global oem_unlock_allowed` removed from hardening (zero detection impact, only hides the UI toggle)
 
 ## Infrastructure
-- VitePress documentation site at `web/docs/` (13 pages: getting-started, architecture, guide, reference)
+- VitePress documentation site split to separate repo [`specter-web`](https://github.com/dpejoh/specter-web)
+- Deployed via Cloudflare Pages at [specter.dpejoh.com](https://specter.dpejoh.com)
 
 ## Contributors
 - @myst-25 — architecture review and recommendations

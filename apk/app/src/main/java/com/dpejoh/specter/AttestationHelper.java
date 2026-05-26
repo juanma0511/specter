@@ -1,4 +1,4 @@
-package io.github.dpejoh.specter;
+package com.dpejoh.specter;
 
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -13,8 +13,8 @@ import java.util.Date;
 
 import javax.security.auth.x500.X500Principal;
 
-import io.github.dpejoh.specter.attestation.Attestation;
-import io.github.dpejoh.specter.attestation.RootOfTrust;
+import com.dpejoh.specter.attestation.Attestation;
+import com.dpejoh.specter.attestation.RootOfTrust;
 
 public class AttestationHelper {
     private static final String TAG = "Specter";

@@ -1,4 +1,4 @@
-package io.github.dpejoh.specter.attestation;
+package com.dpejoh.specter.attestation;
 
 import java.util.ArrayList;
 import java.util.List;

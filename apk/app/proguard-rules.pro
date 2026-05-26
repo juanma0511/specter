@@ -1,2 +1,2 @@
--keep class io.github.dpejoh.specter.** { *; }
+-keep class com.dpejoh.specter.** { *; }
 -dontwarn org.bouncycastle.**

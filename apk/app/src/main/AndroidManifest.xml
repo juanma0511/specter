@@ -9,7 +9,7 @@
 
         <provider
             android:name=".Provider"
-            android:authorities="io.github.dpejoh.specter"
+            android:authorities="com.dpejoh.specter"
             android:exported="true"
             android:grantUriPermissions="false" />
 
