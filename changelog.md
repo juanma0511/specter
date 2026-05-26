@@ -42,7 +42,6 @@
 
 ## Infrastructure
 - VitePress documentation site at `web/docs/` (13 pages: getting-started, architecture, guide, reference)
-- GitHub Pages deployment workflow: triggers on `web/**` pushes to main
 
 ## Contributors
 - @myst-25 — architecture review and recommendations
