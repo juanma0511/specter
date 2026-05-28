@@ -57,7 +57,7 @@ if [ -n "$_custom_type" ] && [ -n "$_custom_value" ]; then
         _clear_custom
         exit 0
       fi
-      log "KEYBOX" "Error: Custom keybox decode failed — not a valid base64 blob"
+      log "KEYBOX" "Error: Custom keybox decode failed, not a valid base64 blob"
       _clear_custom
       [ -f "$BACKUP_FILE" ] && cp "$BACKUP_FILE" "$TARGET_FILE"
       exit 1
@@ -165,13 +165,13 @@ _install_teesimulator() {
   fi
 
   if [ -z "$_ecdsa_block" ]; then
-    log "KEYBOX" "TEE Simulator requires ECDSA key — writing dummy locked.xml"
+    log "KEYBOX" "TEE Simulator requires ECDSA key, writing dummy locked.xml"
     {
       echo '<?xml version="1.0" encoding="UTF-8"?>'
       echo '<AndroidAttestation>'
       echo '<NumberOfKeyboxes>1</NumberOfKeyboxes>'
       echo '<Keybox>'
-      echo '# No valid ECDSA key available — locked.xml placeholder'
+      echo '# No valid ECDSA key available, locked.xml placeholder'
       echo '</Keybox>'
       echo '</AndroidAttestation>'
     } > "$LOCKED_FILE"

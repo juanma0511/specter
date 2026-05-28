@@ -42,7 +42,7 @@ download() {
 
     PATH="$_dl_oldpath"
     unset _dl_url _dl_output _dl_sha256 _dl_oldpath _dl_tmp _dl_code _dl_try _dl_sum _dl_ua
-    return $_dl_code
+    return "$_dl_code"
 }
 
 check_network() {
@@ -228,7 +228,7 @@ apply_boot_hardening() {
 
 ensure_dir() { mkdir -p "$1" 2>/dev/null; }
 
-# Data-driven boot prop application — single source of truth
+# Data-driven boot prop application, single source of truth
 apply_boot_props() {
   # 2-arg props: sp_try <prop> <value>
   while IFS='|' read -r _abp_prop _abp_val; do
@@ -345,8 +345,8 @@ run_device_info() {
 # shellcheck disable=SC3057,SC3052
 _parse_serial() {
   _h="$1"
-  # Check if shell supports string slicing — needed for DER parsing below
-  case "${_h:0:1}" in "") return 1 ;; esac 2>/dev/null || { log "WARN" "Shell lacks string slicing — skipping serial decode"; return 1; }
+  # Check if shell supports string slicing, needed for DER parsing below
+  case "${_h:0:1}" in "") return 1 ;; esac 2>/dev/null || { log "WARN" "Shell lacks string slicing, skipping serial decode"; return 1; }
   case "$_h" in 30*) _h="${_h#30}" ;; *) return 1 ;; esac
   _l_hex="${_h:0:2}" _l_dec=$((16#$_l_hex))
   [ $_l_dec -ge 128 ] && _h="${_h:2 + ($_l_dec - 128) * 2}" || _h="${_h:2}"
@@ -461,7 +461,7 @@ disable_bootloader_spoofer() {
     fi
     cmd appops set com.wmods.wppenhacer POST_NOTIFICATIONS deny 2>/dev/null || true
   else
-    # Fallback for older Android — use pm + sed
+    # Fallback for older Android, use pm + sed
     if grep -q "es.chiteroman.bootloaderspoofer" /data/system/packages.list 2>/dev/null; then
       timeout 5 pm uninstall --user 0 "es.chiteroman.bootloaderspoofer" >/dev/null 2>&1 || true
     fi
@@ -570,15 +570,15 @@ resolve_conflicts() {
 
     case "$_rc_type" in
       aggressive)
-        # 100% overlap — silently disable the other module, Specter handles it
+        # 100% overlap, silently disable the other module, Specter handles it
         _conflict_apply_scripts "$_rc_scripts" "priority_specter"
         cfg_set "conflict_$_rc_id" "priority_specter"
-        log "CONFLICT" "$_rc_name: 100% overlap — disabled, Specter covers all"
+        log "CONFLICT" "$_rc_name: 100% overlap, disabled, Specter covers all"
         ;;
       passive)
-        # Partial overlap — both coexist, user decides via WebUI which handles shared features
+        # Partial overlap, both coexist, user decides via WebUI which handles shared features
         cfg_set "conflict_$_rc_id" "priority_module"
-        log "CONFLICT" "$_rc_name: partial overlap — defaulting to Module priority"
+        log "CONFLICT" "$_rc_name: partial overlap, defaulting to Module priority"
         ;;
     esac
   done <<EOF
@@ -600,7 +600,7 @@ _conflict_claimed() {
     esac
     case "$_cc_type" in
       passive)
-        # Only claim if user chose module priority — otherwise Specter handles it
+        # Only claim if user chose module priority, otherwise Specter handles it
         [ "$(_conflict_choice "$_cc_id")" = "priority_module" ] || continue
         _cc_claimed=0; break
         ;;

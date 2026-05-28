@@ -23,7 +23,7 @@ BLACKLIST_EXTRA="com.android.chrome com.google.android.apps.photos com.google.an
 SUSPICIOUS_PROPS="\
 persist.hyperceiler.log.level|warning|HyperCeiler modding tool persistent log
 persist.sys.vold_app_data_isolation_enabled|warning|App data isolation leak from modding tool
-persist.zygote.app_data_isolation|critical|Zygote data isolation — root-level hooking artifact
+persist.zygote.app_data_isolation|critical|Zygote data isolation, root-level hooking artifact
 persist.com.luckyzyx.luckytool.log.level|warning|LuckyTool Xposed module debug log
 persist.com.luckyzyx.luckytool.debug|warning|LuckyTool Xposed module debug mode
 persist.com.luckyzyx.luckytool.enable|warning|LuckyTool Xposed module enabled state

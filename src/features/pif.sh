@@ -31,7 +31,7 @@ _pif_preflight() {
       log "PIF" "Preflight: $_pd UNREACHABLE via busybox wget"
       ping -c1 -W3 "$_pd" >/dev/null 2>&1 && log "PIF" "  but ping to $_pd works (v4 ICMP)"
       [ -f /proc/net/if_inet6 ] && log "PIF" "  IPv6 is enabled (possible v6 route issue)"
-      command -v curl >/dev/null 2>&1 && log "PIF" "  curl IS available on this device" || log "PIF" "  curl NOT available — install curl to work around v6 issues"
+      command -v curl >/dev/null 2>&1 && log "PIF" "  curl IS available on this device" || log "PIF" "  curl NOT available, install curl to work around v6 issues"
     fi
     unset _pd
   done

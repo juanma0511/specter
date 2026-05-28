@@ -11,7 +11,7 @@ log "TARGET" "Start"
 [ -d "$TRICKY_DIR" ] || die "Tricky Store data directory not found"
 
 if _is_teesimulator; then
-    log "TARGET" "TEESimulator — generating locked.xml section"
+    log "TARGET" "TEESimulator, generating locked.xml section"
     _cust="/sdcard/Specter/customize.txt"
     if [ -f "$_cust" ] && [ "$(head -1 "$_cust" 2>/dev/null)" != "#disable" ]; then
       _locked=$(grep -v '^#' "$_cust" | sed 's/[!?]$//' 2>/dev/null || echo "")
@@ -19,12 +19,12 @@ if _is_teesimulator; then
         [ -f "$TARGET_TXT" ] && cp "$TARGET_TXT" "${TARGET_TXT}.bak"
         _tmp=$(mktemp 2>/dev/null || echo "/data/local/tmp/.specter_tee_$$")
         _locked_f="/data/local/tmp/.specter_locked.$$"
-        printf '%s\n' $_locked > "$_locked_f"
+        printf '%s\n' "$_locked" > "$_locked_f"
         if [ -f "$TARGET_TXT" ] && [ -s "$TARGET_TXT" ]; then
           sed '/^\[/d' "$TARGET_TXT" | grep -Fvxf "$_locked_f" > "$_tmp"
         fi
         rm -f "$_locked_f"
-        printf '%s\n' '[locked.xml]' $_locked >> "$_tmp"
+        printf '%s\n' '[locked.xml]' "$_locked" >> "$_tmp"
         [ -s "$_tmp" ] && mv -f "$_tmp" "$TARGET_TXT" || rm -f "$_tmp"
         unset _tmp
       fi

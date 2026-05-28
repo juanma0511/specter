@@ -49,7 +49,7 @@ case "$_tee" in
 esac
 
 if [ "$_hash" != "unavailable" ] && [ -n "$_hash" ]; then
-  # TEE hash available — authoritative
+  # TEE hash available, authoritative
   _publish_hash "$_hash" "tee"
   if [ "$_partition_hash" = "$_hash" ]; then
     log "TEE" "Digest OK: partition matches TEE attestation"

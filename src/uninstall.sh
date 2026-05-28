@@ -25,7 +25,7 @@ if [ -f "$MIGRATION_MARKER" ]; then
     log "UNINSTALL" "Removed migration marker"
 fi
 
-# Restore persisted props — format: restore|prop_name|prop_value
+# Restore persisted props, format: restore|prop_name|prop_value
 if [ -f "$SPECTER_DIR/persist_backup.txt" ]; then
   while IFS='|' read -r _pr_cmd _pr_name _pr_val; do
     [ "$_pr_cmd" = "restore" ] || continue
@@ -37,7 +37,7 @@ if [ -f "$SPECTER_DIR/persist_backup.txt" ]; then
   log "UNINSTALL" "All persistent props restored"
 fi
 
-# Restore conflict backups — return renamed scripts to their modules
+# Restore conflict backups, return renamed scripts to their modules
 if [ -f "$SPECTER_DIR/conflict_backups.txt" ]; then
   while IFS= read -r _bak_path; do
     [ -z "$_bak_path" ] && continue

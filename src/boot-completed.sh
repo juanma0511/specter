@@ -9,6 +9,6 @@ MODDIR=${0%/*}
 . "$MODDIR/lib/config_env.sh"
 detect_root_solution
 
-log "BOOT" "KSU/APatch detected — sourcing unified boot core"
+log "BOOT" "KSU/APatch detected, sourcing unified boot core"
 
 . "$MODDIR/lib/boot_core.sh"
