@@ -15,6 +15,7 @@ if [ "$(cfg_get toggle_prop_handler 1)" != "0" ]; then
   [ "$(cfg_get boot_state_props 1)" != "0" ] && apply_boot_props
   [ "$(cfg_get spoof_build_props 1)" != "0" ] && spoof_build_props
 fi
+[ "$(cfg_get toggle_vbmeta 1)" != "0" ] && apply_vbmeta_props
 
 log "SERVICE" "Early boot properties set"
 

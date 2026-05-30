@@ -195,8 +195,10 @@
   "sp_placeholder": "YYYY-MM-DD",
   "control_toggle_action_keybox": "Install Keybox",
   "control_toggle_action_keybox_desc": "Download and install a valid keybox from the catalog",
+  "control_toggle_vbmeta": "VBMeta 集成",
+  "control_toggle_vbmeta_desc": "在启动时应用 AVB vbmeta 属性（摘要、版本、哈希算法）",
   "control_toggle_prop_handler": "启动状态属性",
-  "control_toggle_prop_handler_desc": "在启动时重置启动状态属性（vbmeta、verifiedboot、flash.locked）",
+  "control_toggle_prop_handler_desc": "在启动时重置启动状态属性（verifiedboot、flash.locked）",
   "sp_fetch": "获取",
   "sp_fetching": "正在获取最新安全补丁...",
   "sp_fetched": "已获取最新安全补丁"

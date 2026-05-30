@@ -37,6 +37,23 @@ if [ -f "$SPECTER_DIR/persist_backup.txt" ]; then
   log "UNINSTALL" "All persistent props restored"
 fi
 
+# Clean up any persist props the module may have set or deleted
+for _pr in \
+  persist.sys.entryhooks_enabled \
+  persist.sys.pixelprops.gms \
+  persist.sys.pixelprops.gapps \
+  persist.sys.pixelprops.google \
+  persist.sys.pixelprops.pi \
+  persist.sys.spoof.gms; do
+  resetprop -p --delete "$_pr" 2>/dev/null || true
+done
+while IFS= read -r _pr; do
+  [ -z "$_pr" ] && continue
+  resetprop -p --delete "$_pr" 2>/dev/null || true
+done << PROPS
+$(getprop 2>/dev/null | grep -E "pixelprops" | sed "s/^\[\(.*\)\]:.*/\1/" || true)
+PROPS
+
 # Restore conflict backups, return renamed scripts to their modules
 if [ -f "$SPECTER_DIR/conflict_backups.txt" ]; then
   while IFS= read -r _bak_path; do

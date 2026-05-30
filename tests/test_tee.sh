@@ -59,4 +59,17 @@ _hash=$(content query --uri content://com.dpejoh.specter/hash 2>/dev/null \
 assert_eq "tee: mock content returns broken" "broken" "$_tee"
 assert_eq "tee: mock hash 64 chars" 64 "${#_hash}"
 
+# ---- scenario: zero hash rejected (falls through to partition fallback) ----
+bootstrap
+source_libs
+
+zero_hash() {
+  echo "0000000000000000000000000000000000000000000000000000000000000000"
+}
+_hash=$(zero_hash)
+case "$_hash" in
+  0000000000000000000000000000000000000000000000000000000000000000) _hash="unavailable" ;;
+esac
+assert_eq "tee: zero hash rejected as unavailable" "unavailable" "$_hash"
+
 done_testing

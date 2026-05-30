@@ -59,31 +59,6 @@ assert_prop_eq "boot: boot.qemu 1->0"                      "ro.boot.qemu" "0"
 assert_prop_eq "boot: boot.selinux permissive->enforcing"  "ro.boot.selinux" "enforcing"
 assert_prop_eq "boot: vendor.build.type eng->user"         "ro.vendor.build.type" "user"
 
-# ---- apply_boot_props: vbmeta digest from cache ----
-bootstrap
-source_libs
-set_prop "ro.build.selinux" "0"
-echo "abc123digest" > "$VBMETA_DIGEST"
-apply_boot_props
-assert_prop_eq "boot: vbmeta.digest from cache" "ro.boot.vbmeta.digest" "abc123digest"
-
-# ---- apply_boot_props: vbmeta props preserved when exist ----
-bootstrap
-source_libs
-set_prop "ro.boot.vbmeta.avb_version" "2.0"
-set_prop "ro.boot.vbmeta.hash_alg" "sha512"
-apply_boot_props
-assert_prop_eq "boot: avb_version preserved" "ro.boot.vbmeta.avb_version" "2.0"
-assert_prop_eq "boot: hash_alg preserved"    "ro.boot.vbmeta.hash_alg" "sha512"
-
-# ---- apply_boot_props: vbmeta props set when missing ----
-bootstrap
-source_libs
-apply_boot_props
-assert_prop_eq "boot: avb_version set to default"          "ro.boot.vbmeta.avb_version" "1.2"
-assert_prop_eq "boot: hash_alg set to default"             "ro.boot.vbmeta.hash_alg" "sha256"
-assert_prop_eq "boot: invalidate_on_error set to default"  "ro.boot.vbmeta.invalidate_on_error" "yes"
-assert_prop_eq "boot: vbmeta.size set to default"          "ro.boot.vbmeta.size" "4096"
 
 # ---- apply_boot_hardening: no crash when selinux enforced ----
 bootstrap

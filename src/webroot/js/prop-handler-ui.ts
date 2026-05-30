@@ -24,7 +24,7 @@ export function openPropHandlerDialog() {
                   <div class="li-icon"><md-icon aria-hidden="true">lock</md-icon></div>
                   <div class="list-item-content">
                     <div class="toggle-text">${t('prop_handler_boot_state', 'Boot State Props')}</div>
-                    <span class="supporting-text">${t('prop_handler_boot_state_desc', 'Lock bootloader state, vbmeta, verifiedboot, flash.locked, build type/tags')}</span>
+                    <span class="supporting-text">${t('prop_handler_boot_state_desc', 'Lock bootloader state, verifiedboot, flash.locked, build type/tags')}</span>
                   </div>
                   <div class="spacer"></div>
                   <md-switch icons id="ph-state" ${state === '1' ? 'selected' : ''}></md-switch>

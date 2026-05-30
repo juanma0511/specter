@@ -13,7 +13,7 @@ log "BOOT" "Running unified boot core"
 # Boot props handled by service.sh at early boot (Magisk only, same as v1.3.2)
 
 # Boot-time features, single authoritative list, all dispatched as scripts
-for _bf in recovery boot_hardening lsposed security_patch adb_disabler rom_fingerprint; do
+for _bf in recovery boot_hardening lsposed security_patch adb_disabler rom_fingerprint vbmeta; do
   case "$_bf" in *[!a-zA-Z0-9_-]*) log "BOOT" "Skipping invalid feature: $_bf"; continue ;; esac
   case "$_bf" in adb_disabler|rom_fingerprint) _feature_should_run "$_bf" 0 || continue ;; *) _feature_should_run "$_bf" || continue ;; esac
   sh "$MODDIR/features/$_bf.sh" >/dev/null 2>&1 || true

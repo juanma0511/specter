@@ -121,18 +121,18 @@ sp_try() {
 
 sp_persist() {
   _sp_name="$1" _sp_value="$2"
+  _sp_original=$(resetprop "$_sp_name" 2>/dev/null || echo "")
   case "$ROOT_SOL" in
     legacy) setprop "$_sp_name" "$_sp_value" 2>/dev/null || true ;;
     *) resetprop -n -p "$_sp_name" "$_sp_value" 2>/dev/null || true ;;
   esac
-  _sp_restore=$(resetprop "$_sp_name" 2>/dev/null || echo "")
-  if [ -n "$_sp_restore" ]; then
+  if [ -n "$_sp_original" ]; then
     ensure_dir "$SPECTER_DIR"
     if ! grep -qsF "|$_sp_name|" "$PERSIST_RESTORE_FILE" 2>/dev/null; then
-      echo "restore|$_sp_name|$_sp_restore" >> "$PERSIST_RESTORE_FILE" 2>/dev/null || true
+      echo "restore|$_sp_name|$_sp_original" >> "$PERSIST_RESTORE_FILE" 2>/dev/null || true
     fi
   fi
-  unset _sp_name _sp_value _sp_restore
+  unset _sp_name _sp_value _sp_original
 }
 
 hide_recovery_folders() {
@@ -175,17 +175,19 @@ apply_boot_hardening() {
 
 ensure_dir() { mkdir -p "$1" 2>/dev/null; }
 
-# Data-driven boot prop application, single source of truth
-apply_boot_props() {
+# VBMeta AVB prop application (digest + AVB metadata)
+apply_vbmeta_props() {
   if [ -f "$VBMETA_DIGEST" ]; then
     resetprop -n ro.boot.vbmeta.digest "$(cat "$VBMETA_DIGEST")"
   fi
-  # Only set vbmeta props if system hasn't already defined them
-  # (direct resetprop -n, not sp_try, because sp_try skips missing props)
   resetprop ro.boot.vbmeta.avb_version >/dev/null 2>&1 || resetprop -n ro.boot.vbmeta.avb_version "1.2"
   resetprop ro.boot.vbmeta.hash_alg >/dev/null 2>&1 || resetprop -n ro.boot.vbmeta.hash_alg "sha256"
   resetprop ro.boot.vbmeta.invalidate_on_error >/dev/null 2>&1 || resetprop -n ro.boot.vbmeta.invalidate_on_error "yes"
   resetprop ro.boot.vbmeta.size >/dev/null 2>&1 || resetprop -n ro.boot.vbmeta.size "4096"
+}
+
+# Data-driven boot prop application, single source of truth
+apply_boot_props() {
   # 2-arg props: sp_try <prop> <value>
   while IFS='|' read -r _abp_prop _abp_val; do
     [ -z "$_abp_prop" ] && continue
@@ -400,12 +402,19 @@ MAP
 
   while IFS= read -r _brs_prop; do
     [ -z "$_brs_prop" ] && continue
+    _brs_orig=$(resetprop "$_brs_prop" 2>/dev/null || echo "")
+    if [ -n "$_brs_orig" ]; then
+      ensure_dir "$SPECTER_DIR"
+      if ! grep -qsF "|$_brs_prop|" "$PERSIST_RESTORE_FILE" 2>/dev/null; then
+        echo "restore|$_brs_prop|$_brs_orig" >> "$PERSIST_RESTORE_FILE" 2>/dev/null || true
+      fi
+    fi
     resetprop -p --delete "$_brs_prop" 2>/dev/null || true
   done << BRS_PROPS
 $(getprop 2>/dev/null | grep -E "pixelprops" | sed "s/^\[\(.*\)\]:.*/\1/" || true)
 BRS_PROPS
 
-  unset _brs_gate _brs_prop _brs_val
+  unset _brs_gate _brs_prop _brs_val _brs_orig
 }
 
 disable_bootloader_spoofer() {

@@ -195,8 +195,10 @@
   "sp_placeholder": "YYYY-MM-DD",
   "control_toggle_action_keybox": "Install Keybox",
   "control_toggle_action_keybox_desc": "Download and install a valid keybox from the catalog",
+  "control_toggle_vbmeta": "تكامل VBMeta",
+  "control_toggle_vbmeta_desc": "تطبيق خصائص AVB vbmeta (الملخص، الإصدار، خوارزمية التجزئة) عند الإقلاع",
   "control_toggle_prop_handler": "حالة خصائص الإقلاع",
-  "control_toggle_prop_handler_desc": "إعادة تعيين خصائص حالة الإقلاع (vbmeta، verifiedboot، flash.locked) عند الإقلاع",
+  "control_toggle_prop_handler_desc": "إعادة تعيين خصائص حالة الإقلاع (verifiedboot، flash.locked) عند الإقلاع",
   "sp_fetch": "جلب",
   "sp_fetching": "جاري جلب آخر تصليح أمان...",
   "sp_fetched": "تم جلب آخر تصليح أمان"

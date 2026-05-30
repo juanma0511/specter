@@ -24,6 +24,7 @@ export const CONTROL_TOGGLES: ToggleDef[] = [
   { id: 'toggle-boot_hardening', key: 'toggle_boot_hardening' },
   { id: 'toggle-prop_handler', key: 'toggle_prop_handler' },
   { id: 'toggle-lsposed', key: 'toggle_lsposed' },
+  { id: 'toggle-vbmeta', key: 'toggle_vbmeta' },
   { id: 'toggle-rom_fingerprint', key: 'toggle_rom_fingerprint', default: '0' },
   { id: 'toggle-adb_disabler', key: 'toggle_adb_disabler', default: '0' },
   { id: 'toggle-action_gms', key: 'toggle_action_gms' },

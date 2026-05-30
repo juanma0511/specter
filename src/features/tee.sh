@@ -23,6 +23,10 @@ for _i in 1 2 3 4 5; do
 done
 _hash=$(content query --uri content://$PACKAGE/hash 2>/dev/null \
   | grep -oE '[a-f0-9]{64}|unavailable') || true
+# Reject all-zeros hash (TEE returns zeros when boot state is unverified/failed)
+case "$_hash" in
+  0000000000000000000000000000000000000000000000000000000000000000) _hash="unavailable" ;;
+esac
 unset _i
 
 pm uninstall $PACKAGE 2>/dev/null || true

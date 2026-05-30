@@ -25,7 +25,7 @@ if [ -n "$MODDIR" ]; then
     *)          _root="$MODDIR" ;;
   esac
   BBIN="$_root/bin"
-  CONFIG_DIR="$_root/config"
+  : "${CONFIG_DIR:="$_root/config"}"
   MIGRATION_MARKER="$_root/.migrated"
   unset _root
 fi

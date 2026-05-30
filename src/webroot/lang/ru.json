@@ -195,8 +195,10 @@
   "sp_placeholder": "YYYY-MM-DD",
   "control_toggle_action_keybox": "Install Keybox",
   "control_toggle_action_keybox_desc": "Download and install a valid keybox from the catalog",
+  "control_toggle_vbmeta": "VBMeta Интеграция",
+  "control_toggle_vbmeta_desc": "Применить AVB vbmeta свойства (дайджест, версия, хэш-алгоритм) при загрузке",
   "control_toggle_prop_handler": "Свойства состояния загрузки",
-  "control_toggle_prop_handler_desc": "Сбросить свойства состояния загрузки (vbmeta, verifiedboot, flash.locked) при загрузке",
+  "control_toggle_prop_handler_desc": "Сбросить свойства состояния загрузки (verifiedboot, flash.locked) при загрузке",
   "sp_fetch": "Получить",
   "sp_fetching": "Получение последнего патча безопасности...",
   "sp_fetched": "Последний патч безопасности получен"
