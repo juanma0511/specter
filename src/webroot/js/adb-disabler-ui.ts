@@ -47,7 +47,7 @@ export function openAdbDisablerDialog() {
               <div class="li-icon"><md-icon aria-hidden="true">lock_outline</md-icon></div>
               <div class="list-item-content">
                 <div class="toggle-text">${t('adb_disabler_oem_unlock', 'Hide OEM Unlock Support')}</div>
-                <span class="supporting-text">${t('adb_disabler_oem_unlock_desc', 'Sets ro.oem_unlock_supported=0 to hide OEM unlock capability from apps')}</span>
+                <span class="supporting-text">${t('adb_disabler_oem_unlock_desc', 'Hides OEM unlock toggle from developer options')}</span>
               </div>
               <div class="spacer"></div>
               <md-switch icons id="adb-oem-unlock" ${oemUnlock === '1' ? 'selected' : ''}></md-switch>

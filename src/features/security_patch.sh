@@ -51,9 +51,7 @@ unset _patch
 log "SECURITY_PATCH" "Writing $patch_date to $SECURITY_PATCH_FILE"
 
 cat > "$SECURITY_PATCH_FILE" <<EOF || die "Failed to write $SECURITY_PATCH_FILE"
-system=prop
-boot=$patch_date
-vendor=$patch_date
+all=${patch_date}
 EOF
 log "SECURITY_PATCH" "Patch date written to $SECURITY_PATCH_FILE"
 log "SECURITY_PATCH" "Finish"

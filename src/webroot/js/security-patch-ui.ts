@@ -61,7 +61,7 @@ export function wireSecurityPatch() {
         showToast(t('sp_invalid_date', 'Invalid date format (use YYYY-MM-DD)'), { icon: 'error', type: 'error' as any, autoCloseDelay: 3000 });
         return;
       }
-      const content = `system=prop\nboot=${val}\nvendor=${val}`;
+      const content = `all=${val}`;
       try {
         await exec(`cat > /data/adb/tricky_store/security_patch.txt << 'SEOF'\n${content}\nSEOF`);
         const moddir = getModuleDir();
