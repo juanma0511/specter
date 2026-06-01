@@ -1,7 +1,6 @@
 #!/system/bin/sh
 set -e
 MODDIR=${0%/*}
-# Guard: KernelSU and APatch both set $KSU=true; skip if not running under them
 [ -z "$KSU" ] && exit 0
 
 . "$MODDIR/lib/common.sh"

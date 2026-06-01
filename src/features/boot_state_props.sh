@@ -8,8 +8,6 @@ MODDIR=${0%/*}
 
 [ "$(cfg_get toggle_prop_handler 1)" = "0" ] && exit 0
 
-# Only runs suspicious-props scanner; boot props applied in post-fs-data
-
 _sp=$(cfg_get suspicious_props 1)
 
 [ "$_sp" = "0" ] && exit 0

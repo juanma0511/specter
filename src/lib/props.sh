@@ -1,5 +1,4 @@
 # shellcheck shell=sh
-# SPECTER_DIR and GMS_PROPS_FILE are defined in paths.sh (sourced via common.sh)
 GOOGLE_REVOCATION_URL="${GOOGLE_REVOCATION_URL:-https://android.googleapis.com/attestation/status?encrypted=0}"
 PERSIST_RESTORE_FILE="$SPECTER_DIR/persist_backup.txt"
 
@@ -84,7 +83,20 @@ apply_vbmeta_props() {
 }
 
 apply_boot_props() {
-  # Static props moved to system.prop; wildcards + partition dm-verity below
+  for _abp_prop in \
+    ro.build.selinux:1 ro.secure:1 ro.crypto.state:encrypted \
+    ro.hardware.virtual_device:0 ro.build.type:user ro.build.tags:release-keys \
+    ro.warranty_bit:0 ro.vendor.warranty_bit:0 ro.vendor.boot.warranty_bit:0 \
+    ro.is_ever_orange:0 ro.secureboot.lockstate:locked \
+    ro.boot.vbmeta.device_state:locked ro.boot.verifiedbootstate:green \
+    ro.boot.flash.locked:1 ro.boot.veritymode:enforcing \
+    ro.boot.veritymode.managed:yes ro.boot.selinux:enforcing \
+    vendor.boot.verifiedbootstate:green vendor.boot.vbmeta.device_state:locked \
+    ro.boot.realmebootstate:green ro.boot.realme.lockstate:1 \
+    ro.kernel.qemu:0 ro.boot.qemu:0 \
+    ro.system.build.tags:release-keys ro.vendor.build.tags:release-keys; do
+    sp_try "${_abp_prop%%:*}" "${_abp_prop#*:}"
+  done
   for _abp_prop in ro.product.build.type ro.system.build.type ro.vendor.build.type \
     ro.odm.build.type ro.product.vendor.build.type ro.product.odm.build.type; do
     sp_try "$_abp_prop" "user"
