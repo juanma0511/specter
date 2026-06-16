@@ -3,6 +3,7 @@ import { shellEscape, fetchJson } from './utils.js';
 import { showToast } from './toast.js';
 import { getTranslation } from './i18n.js';
 import { appendToOutput } from './terminal.js';
+import { TRICKY_DIR } from './constants.js';
 
 type TargetState = 'unchecked' | 'bare' | 'conditional' | 'force';
 type BlacklistState = 'unchecked' | 'blacklisted';
@@ -41,7 +42,6 @@ const BLACKLIST_LABEL_KEYS: Record<string, string> = {
 
 const specterDir = () => getDataDir() || '/data/adb/specter';
 const TARGET_CACHE_FILE = () => `${specterDir()}/app_labels.json`;
-const TRICKY_DIR = '/data/adb/tricky_store';
 const APP_CATALOG_API = 'https://rawbin.dpejoh.com/apps';
 
 function t(key: string, fallback: string): string {

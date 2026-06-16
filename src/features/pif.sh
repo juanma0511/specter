@@ -32,6 +32,6 @@ case "$_NAME" in
     ;;
 esac
 
-unset _NAME PIF_DIR
+unset _NAME
 log "PIF" "Finish"
 exit 0

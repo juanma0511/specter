@@ -1,11 +1,8 @@
-import { exec } from './bridge.js';
+import { exec, getModuleDir } from './bridge.js';
 import { getTranslation } from './i18n.js';
 import { showToast } from './toast.js';
-import { defaultSecurityPatch } from './constants.js';
-import { getModuleDir } from './bridge.js';
+import { TRICKY_DIR, defaultSecurityPatch } from './constants.js';
 import { shellEscape } from './utils.js';
-
-const TRICKY_DIR = '/data/adb/tricky_store';
 const t = (key: string, fallback: string): string => getTranslation(key) || fallback;
 
 export function wireSecurityPatch() {

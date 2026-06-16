@@ -36,7 +36,6 @@ export interface InfoJson {
   security_patch?: string;
   build_patch?: string;
   pif_model?: string;
-  flags?: { twrp?: boolean; blacklist?: boolean };
 }
 
 export interface KeyboxInfoJson {

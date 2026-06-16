@@ -65,15 +65,4 @@ if [ "$(cfg_get toggle_scheduler 1)" != "0" ]; then
   log "BOOT" "Scheduler launched (PID $!)"
 fi
 
-(
-  while [ -f "$SPECTER_DIR/loop_keybox_info.pid" ]; do
-    sleep 21600
-    [ -d "$MODDIR" ] || exit 0
-    sh "$MODDIR/features/keybox_info.sh" >"$SPECTER_DIR/log/keybox_info.log" 2>&1 || true
-    . "$MODDIR/lib/desc.sh"
-    refresh_module_description
-  done
-) &
-echo "$!" > "$SPECTER_DIR/loop_keybox_info.pid"
-
 log "BOOT" "Unified boot core done"

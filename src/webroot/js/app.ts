@@ -99,10 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshKeyboxStatus().catch(() => {});
   });
 
-  /* Phase 4: Preload page MWC + background tasks */
-  import('./material-tools.js').catch(() => {});
-  import('./material-control.js').catch(() => {});
-  import('./material-settings.js').catch(() => {});
+  /* Phase 4: Background tasks */
   initNetwork();
   import('./keybox-ui.js').then(m => m.populateProviders()).catch(() => {});
   loadContributors().catch(() => {});

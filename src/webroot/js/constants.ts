@@ -33,6 +33,8 @@ export const CONTROL_TOGGLES: ToggleDef[] = [
   { id: 'toggle-action_pif', key: 'toggle_action_pif' },
 ];
 
+export const TRICKY_DIR = '/data/adb/tricky_store';
+
 export function defaultSecurityPatch(): string {
   const now = new Date();
   const m = now.getMonth();

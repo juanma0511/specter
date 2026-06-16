@@ -2,7 +2,6 @@
 # shellcheck disable=SC2034
 MODDIR="$MODPATH"
 . "$MODPATH/lib/common.sh"
-. "$MODPATH/lib/paths.sh"
 . "$MODPATH/lib/config_env.sh"
 . "$MODPATH/lib/urls.sh"
 
