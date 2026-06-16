@@ -8,7 +8,6 @@ REMOTE_CONTROL_APPS="com.anydesk.anydeskandroid com.teamviewer.teamviewer.market
 
 TOOL_APPS="bin.mt.plus bin.mt.plus.canary com.omarea.vtools moe.shizuku.privileged.api com.estrongs.android.pop com.coolapk.market com.sevtinge.hyperceiler com.coderstory.toolkit"
 
-BLACKLIST_EXTRA="com.android.chrome com.google.android.apps.photos com.google.android.youtube com.topjohnwu.magisk mmrl"
 
 SUSPICIOUS_PROPS="\
 persist.hyperceiler.log.level|warning|HyperCeiler modding tool persistent log

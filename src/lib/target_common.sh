@@ -39,11 +39,7 @@ _ensure_blacklist() {
   if [ ! -f "$BLACKLIST" ]; then
     log "TARGET" "Creating default blacklist"
     ensure_dir "$SPECTER_DIR"
-    {
-      for _pkg in $BLACKLIST_EXTRA; do
-        echo "$_pkg"
-      done
-    } > "$BLACKLIST"
+    : > "$BLACKLIST"
     log "TARGET" "Default blacklist created"
   fi
   unset _pkg
