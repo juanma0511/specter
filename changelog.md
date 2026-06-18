@@ -1,34 +1,37 @@
-# v1.4.4.08
+# v1.4.4.09
 
 **Breaking**
 - Module ID changed to `specter` (lowercase)
-- Data dir moved to `/data/adb/specter`
 - Config and backup paths centralized
 
 **Removed**
-- LSPosed ODEX Clean
-- `boot-completed.sh`
-- `target_merge.sh`
-- Denylist merge
-- `loop_keybox_info` scheduler
+- LSPosed ODEX Clean, `boot-completed.sh`, `target_merge.sh`, `orchestrator.sh`, `boot_core.sh`
+- Denylist merge, `loop_keybox_info` scheduler, `migrate_conflict_config`
 - `DETECTOR_APPS`, `REMOTE_CONTROL_APPS`, `BLACKLIST_EXTRA`, `SUSPICIOUS_PROPS` lists
-- Dead home-page mini-cards
-- All `cfgInvalidate()` calls and `cfgFlush()`
+- `disable_bootloader_spoofer`, `hexpatch_deleteprop`, TEESimulator handling
+- Dead home-page mini-cards, `cfgInvalidate()`/`cfgFlush()` calls
+- Detector app directory cleanup, `getRecentEntries`, `flags` from InfoJson
 
 **New**
-- First-boot setup (auto backup + keybox install)
-- Restore Backups action
-- Custom Boot Hash UI
-- Region Props toggle
+- Custom Boot Hash UI, Restore Backups action, Region Props toggle
+- Background Jobs section (Auto-Targeting, Keybox Info Refresh as toggles)
+- Auto-target Instant/Polling method selector
 
 **Rewritten**
-- `boot_state_props.sh` no longer uses `nsenter`, directly scans persistent_properties for lsposed/hyperceiler/luckytool
-- Control toggles generated from TypeScript instead of hardcoded HTML
-- TEE APK installed at flash time instead of boot
+- Boot logic consolidated into `service.sh` for all root solutions
+- TEE check via `app_process` (classes.dex), no APK install
+- `boot_state_props.sh` scans persistent_properties directly
+- Control toggles generated from TypeScript, action pipeline inlined
+- HMA config install with sandbox escape fallback
 
-**Infra**
+**Changed**
 - `MODULES_BASE` variable centralizes all module paths
 - API endpoints moved to `rawbin.dpejoh.com`
+- TEE deps extracted at flash time instead of boot
+- Backups stored in `$SPECTER_DIR/backup/`
+- CONFIG_DIR relocated to `$SPECTER_DIR/config/`
+- Online check timeout 800ms → 1500ms
+- `build.sh` extracts classes.dex instead of copying APK
 
 # v1.4.4.07
 
