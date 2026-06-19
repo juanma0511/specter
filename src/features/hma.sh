@@ -36,6 +36,9 @@ _install_ok=0
 
 if check_network; then
   if download "$HMA_CONFIG_URL" "$TEMP_FILE" 2>/dev/null && [ -s "$TEMP_FILE" ]; then
+
+    cp "$TEMP_FILE" "/sdcard/Download/hma-oss.json" 2>/dev/null || cp "$TEMP_FILE" "/sdcard/hma-oss.json" 2>/dev/null
+
     _pkg=$(echo "$_target_dir" | cut -d"/" -f5)
     _uid=$(pm list packages -U 2>/dev/null | grep "^package:$_pkg uid:" | sed "s/.*uid://") || _uid=0
 
