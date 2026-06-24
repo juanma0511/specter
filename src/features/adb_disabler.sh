@@ -13,6 +13,7 @@ _oem_unlock=$(cfg_get toggle_adb_disabler_oem_unlock 1)
 
 if [ "$_dev_opt" != "0" ]; then
   settings put global development_settings_enabled 0
+  resetprop -n persist.sys.development_settings_enabled 0
   log "ADB" "Developer options disabled"
 fi
 
@@ -20,22 +21,8 @@ if [ "$_usb_dbg" != "0" ]; then
   resetprop -n ro.debuggable 0
   resetprop -n ro.force.debuggable 0
   resetprop -n ro.adb.secure 1
-
-  strip_adb_from_usb_config() {
-      _strip_prop="$1"
-      _strip_val="$(resetprop "$_strip_prop")"
-      if [ -n "$_strip_val" ]; then
-          _strip_new="$(echo "$_strip_val" | sed 's/,adb//g; s/adb,//g; s/^adb$//; s/^adb,//')"
-          if [ -z "$_strip_new" ]; then
-              resetprop -n "$_strip_prop" "mtp"
-          elif [ "$_strip_new" != "$_strip_val" ]; then
-              resetprop -n "$_strip_prop" "$_strip_new"
-          fi
-      fi
-  }
-
-  strip_adb_from_usb_config persist.sys.usb.config
-  strip_adb_from_usb_config sys.usb.config
+  resetprop -n persist.sys.usb.config mtp
+  resetprop -n sys.usb.config mtp
 
   resetprop -n sys.oem_unlock_allowed 0
   resetprop -n service.adb.root 0
