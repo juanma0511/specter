@@ -1,3 +1,31 @@
+# v1.4.4-16
+
+**New**
+- Turkish + Polish translations; Crowdin CI + validation tests for i18n
+- Random selection from workingEntries for auto keybox
+- Conflict entries for TA_utl / TA_enhanced
+
+**Changed**
+- Zygisk Next: dropped `zygiskd` dep, validates module name, writes config files directly
+- Monet seed: in-memory cache, re-extracts on System chip click
+- ADB disabler: simplified USB config, added dev settings prop
+- History now stores exit code — failed scripts show correct description
+- Stale conflict configs cleaned up automatically
+
+**Fixed**
+- Hundreds of AI mistranslations in ar/es/ru/zh (TEE, ADB, PIF terms)
+- Inotify handler missing MODULES_BASE — wrong module description
+- TEE button not updating cached files in device info
+- `check_tee_bhash.sh` missing paths.sh source
+- Stale translation keys removed, missing keys filled
+
+**Infrastructure**
+- Shell tests rewritten/expanded to 97 assertions
+- Crowdin weekly sync workflow; `push.sh` parameterized; stale artifacts cleaned
+
+**Removed**
+- PayPal from support
+
 # v1.4.4-15
 
 **New**
