@@ -87,6 +87,23 @@ unset _pif_name
 # Ensure backup dir exists for first-boot snapshot
 mkdir -p "$SPECTER_DIR/backup"
 
+# Bundled inotifyd — install the right arch, clean up the rest
+_arch=$(uname -m)
+case "$_arch" in
+  aarch64) _src="inotifyd64" ;;
+  armv7l)  _src="inotifyd32" ;;
+  x86_64)  _src="inotifyd_x86_64" ;;
+  i686)    _src="inotifyd_x86" ;;
+esac
+if [ -n "$_src" ] && [ -f "$MODPATH/deps/$_src" ]; then
+  mv "$MODPATH/deps/$_src" "$MODPATH/deps/inotifyd"
+  set_perm "$MODPATH/deps/inotifyd" 0 0 0755
+fi
+for _f in inotifyd64 inotifyd32 inotifyd_x86_64 inotifyd_x86; do
+  [ -f "$MODPATH/deps/$_f" ] && rm -f "$MODPATH/deps/$_f"
+done
+unset _arch _src _f
+
 # Copy shipped config files to data dir
 mkdir -p "$SPECTER_DIR/config"
 cp "$MODPATH/config/conflicts.txt" "$SPECTER_DIR/config/conflicts.txt" 2>/dev/null || true
