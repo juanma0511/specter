@@ -1,15 +1,13 @@
 #!/system/bin/sh
+set -e
 MODDIR=${0%/*}
-_root="${MODDIR%/*}"
-. "$_root/lib/log.sh"
-
-SPECTER_DIR="${SPECTER_DIR:-/data/adb/specter}"
+. "$MODDIR/../lib/common.sh"
 OUTPUT="$SPECTER_DIR/app_labels.json"
 TMP="$SPECTER_DIR/.app_labels.tmp"
 
 mkdir -p "$SPECTER_DIR"
 
-log "APP_INFO" "Resolving app labels for all user packages"
+log_i "APP_INFO" "Resolving app labels for all user packages"
 
 printf "{" > "$TMP"
 sep=""
@@ -28,4 +26,4 @@ done
 printf "}" >> "$TMP"
 
 mv "$TMP" "$OUTPUT"
-log "APP_INFO" "Wrote $(wc -c < "$OUTPUT") bytes to $OUTPUT"
+log_d "APP_INFO" "Wrote $(wc -c < "$OUTPUT") bytes to $OUTPUT"

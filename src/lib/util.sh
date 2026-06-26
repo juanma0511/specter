@@ -1,5 +1,5 @@
 # shellcheck shell=sh
-ensure_dir() { mkdir -p "$1" 2>/dev/null; }
+ensure_dir() { mkdir -p "$1" 2>/dev/null && log_d "UTIL" "Ensured dir: $1"; }
 
 _escape_json() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 

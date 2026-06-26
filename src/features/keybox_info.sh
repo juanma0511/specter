@@ -1,10 +1,11 @@
 #!/system/bin/sh
+set -e
 MODDIR=${0%/*}
 . "$MODDIR/../lib/common.sh"
 . "$MODDIR/../lib/paths.sh"
 . "$MODDIR/../lib/urls.sh"
 
-log "KEYBOX_INFO" "Start"
+log_i "KEYBOX_INFO" "Starting keybox info check"
 
 KEYBOX_FILE="$TRICKY_DIR/keybox.xml"
 INFO_PATH="$MODDIR/../webroot/json/keybox_info.json"
@@ -30,27 +31,27 @@ if [ -f "$KEYBOX_FILE" ]; then
     _source="Private"
     _text="Keybox"
     _up_to_date=true
-    log "KEYBOX_INFO" "Private keybox flagged by user"
+    log_d "KEYBOX_INFO" "Private keybox flagged by user"
     if _serial=$(decode_keybox_serial "$KEYBOX_FILE"); then
       if check_google_revocation "$_serial"; then
         _revoked=true
-        log "KEYBOX_INFO" "Revoked by Google"
+        log_w "KEYBOX_INFO" "Revoked by Google"
       fi
     fi
   elif _serial=$(decode_keybox_serial "$KEYBOX_FILE"); then
-    log "KEYBOX_INFO" "Serial: $_serial"
+    log_d "KEYBOX_INFO" "Serial: $_serial"
 
     _serial_dec=$(printf '%u' "0x$_serial" 2>/dev/null || echo "")
 
     if check_google_revocation "$_serial"; then
       _revoked=true
-      log "KEYBOX_INFO" "Revoked by Google"
+      log_w "KEYBOX_INFO" "Revoked by Google"
     fi
 
     if check_network; then
       _history_json=$(download "$CATALOG_URL" 2>/dev/null)
       if [ -n "$_history_json" ]; then
-        log "KEYBOX_INFO" "Catalog response length: ${#_history_json}"
+        log_d "KEYBOX_INFO" "Catalog response length: ${#_history_json}"
         _provider=$(cat "$CONFIG_DIR/kb_provider.val" 2>/dev/null || echo "auto")
         if [ "$_provider" = "auto" ]; then
           _provider=$(echo "$_history_json" | grep -o '"working":{[^}]*"source":"[^"]*"' | sed 's/.*"source":"\([^"]*\)".*/\1/')
@@ -82,10 +83,10 @@ if [ -f "$KEYBOX_FILE" ]; then
             _up_to_date=true
           fi
         else
-          log "KEYBOX_INFO" "Not found in catalog"
+          log_d "KEYBOX_INFO" "Not found in catalog"
         fi
       else
-        log "KEYBOX_INFO" "No network, skipping catalog"
+        log_w "KEYBOX_INFO" "No network, skipping catalog"
       fi
     fi
   fi
@@ -106,5 +107,5 @@ cat <<EOF > "$INFO_PATH"
 EOF
 
 unset _installed _source _source_version _text _up_to_date _revoked _softbanned _serial _serial_dec _history_json _entry _provider _latest_for_source _is_private_val
-log "KEYBOX_INFO" "Finish"
+log_i "KEYBOX_INFO" "Keybox info check complete"
 exit 0

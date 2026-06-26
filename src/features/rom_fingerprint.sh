@@ -12,7 +12,7 @@ _rf_prefix=$(cfg_get rom_fingerprint_prefix 1)
 
 [ "$_rf_hexpatch$_rf_prefix" = "00" ] && exit 0
 
-log "ROM_FP" "Cleaning ROM fingerprints"
+log_i "ROM_FP" "Cleaning ROM fingerprints"
 
 if [ "$_rf_hexpatch" != "0" ]; then
   for _rf_pattern in \
@@ -53,13 +53,13 @@ fi
 # LineageOS camera packagelist scrub
 _rf_cam=$(resetprop vendor.camera.aux.packagelist 2>/dev/null || echo "")
 case "$_rf_cam" in
-  *org.lineageos*) resetprop -n vendor.camera.aux.packagelist "com.android.camera" && log "ROM_FP" "Scrubbed vendor.camera.aux.packagelist" ;;
+  *org.lineageos*) resetprop -n vendor.camera.aux.packagelist "com.android.camera" && log_d "ROM_FP" "Scrubbed vendor.camera.aux.packagelist" ;;
 esac
 unset _rf_cam
 
 _rf_cam_priv=$(resetprop persist.vendor.camera.privapp.list 2>/dev/null || echo "")
 case "$_rf_cam_priv" in
-  *org.lineageos*) resetprop -n persist.vendor.camera.privapp.list "com.android.camera" && log "ROM_FP" "Scrubbed persist.vendor.camera.privapp.list" ;;
+  *org.lineageos*) resetprop -n persist.vendor.camera.privapp.list "com.android.camera" && log_d "ROM_FP" "Scrubbed persist.vendor.camera.privapp.list" ;;
 esac
 unset _rf_cam_priv
 
@@ -68,8 +68,8 @@ _rf_health=$(resetprop init.svc.vendor.lineage_health 2>/dev/null || echo "")
 if [ -n "$_rf_health" ]; then
   setprop ctl.stop vendor.lineage_health 2>/dev/null || true
   resetprop -d init.svc.vendor.lineage_health 2>/dev/null || true
-  log "ROM_FP" "Stopped vendor.lineage_health"
+  log_d "ROM_FP" "Stopped vendor.lineage_health"
 fi
 unset _rf_health
 
-log "ROM_FP" "Done"
+log_i "ROM_FP" "ROM fingerprint cleanup complete"

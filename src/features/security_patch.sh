@@ -18,8 +18,6 @@ case "${1:-}" in
     ;;
 esac
 
-log "SECURITY_PATCH" "Start"
-
 # Try to fetch the real security patch date from source.android.com first.
 # Network may not be available yet at boot, so fall back to date computation.
 _patch=$(sh "$0" --fetch 2>/dev/null) || true
@@ -41,18 +39,17 @@ if [ -z "$_patch" ]; then
   # Last day of month: for most months it's 28/30/31
   # Use 05 as a common convention
   patch_date="${target_year}-${formatted_month}-05"
-  log "SECURITY_PATCH" "Network unavailable, using computed date: $patch_date"
+  log_w "SECURITY_PATCH" "Network unavailable, using computed date: $patch_date"
 else
   patch_date="$_patch"
-  log "SECURITY_PATCH" "Fetched security patch date: $patch_date"
+  log_i "SECURITY_PATCH" "Fetched security patch date: $patch_date"
 fi
 unset _patch
 
-log "SECURITY_PATCH" "Writing $patch_date to $SECURITY_PATCH_FILE"
+log_i "SECURITY_PATCH" "Writing $patch_date to $SECURITY_PATCH_FILE"
 
 cat > "$SECURITY_PATCH_FILE" <<EOF || die "Failed to write $SECURITY_PATCH_FILE"
 all=${patch_date}
 EOF
-log "SECURITY_PATCH" "Patch date written to $SECURITY_PATCH_FILE"
-log "SECURITY_PATCH" "Finish"
+log_i "SECURITY_PATCH" "Patch date written to $SECURITY_PATCH_FILE"
 exit 0

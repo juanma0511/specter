@@ -55,13 +55,13 @@ _conflict_uninstall() {
     [ -d "$_cu_path" ] || continue
     [ -f "$_cu_path/uninstall.sh" ] && sh "$_cu_path/uninstall.sh" 2>/dev/null || true
     rm -rf "$_cu_path"
-    log "CONFLICT" "Uninstalled $_cu_name ($_cu_id)"
+    log_i "CONFLICT" "Uninstalled $_cu_name ($_cu_id)"
     _cu_removed=0
   done
   # integritybox also stores state in Box-Brain
   [ "$_cu_id" = "integritybox" ] && [ -d "/data/adb/Box-Brain" ] && {
     rm -rf "/data/adb/Box-Brain"
-    log "CONFLICT" "Uninstalled Box-Brain (integritybox state)"
+    log_i "CONFLICT" "Uninstalled Box-Brain (integritybox state)"
   }
   # Strip any backup entries for scripts in the removed module
   [ "$_cu_removed" = "0" ] && [ -f "$CONFLICT_BACKUP_FILE" ] &&
@@ -90,7 +90,7 @@ _conflict_apply_scripts() {
 # action-pipeline features use the toggle_action_ prefix.
 _conflict_toggle_key() {
   case "$1" in
-    target|security_patch) printf 'toggle_action_%s' "$1" ;;
+    target|security_patch|gms|keybox|pif) printf 'toggle_action_%s' "$1" ;;
     *) printf 'toggle_%s' "$1" ;;
   esac
   unset _ctk_f
@@ -113,7 +113,7 @@ resolve_conflicts() {
     _conflict_detect "$_rc_id" && continue
     [ -f "$CONFIG_DIR/conflict_$_rc_id.val" ] || continue
     rm -f "$CONFIG_DIR/conflict_$_rc_id.val" 2>/dev/null || true
-    log "CONFLICT" "$_rc_name: no longer detected, cleaned up stale config"
+    log_i "CONFLICT" "$_rc_name: no longer detected, cleaned up stale config"
     _rc_old_ifs="$IFS"
     IFS=','
     for _rc_script in $_rc_scripts; do
@@ -139,11 +139,11 @@ EOF
         case "$_rc_id" in
           Yurikey|integritybox|tsupport-advance|sensitive_props)
             _conflict_uninstall "$_rc_id" "$_rc_name"
-            log "CONFLICT" "$_rc_name: 100% overlap, uninstalled"
+            log_i "CONFLICT" "$_rc_name: 100% overlap, uninstalled"
             ;;
           *)
             _conflict_apply_scripts "$_rc_scripts" "priority_specter"
-            log "CONFLICT" "$_rc_name: 100% overlap, disabled, Specter covers all"
+            log_i "CONFLICT" "$_rc_name: 100% overlap, disabled, Specter covers all"
             ;;
         esac
         cfg_set "conflict_$_rc_id" "priority_specter"
@@ -151,7 +151,7 @@ EOF
       passive)
         if [ ! -f "$CONFIG_DIR/conflict_$_rc_id.val" ]; then
           cfg_set "conflict_$_rc_id" "priority_module"
-          log "CONFLICT" "$_rc_name: partial overlap, defaulting to Module priority"
+          log_i "CONFLICT" "$_rc_name: partial overlap, defaulting to Module priority"
         fi
         _rc_old_ifs="$IFS"
         IFS=','

@@ -12,27 +12,27 @@ ZN_MODULE_DIR="$MODULES_BASE/zygisksu"
 ZN_PROPFILE="$ZN_MODULE_DIR/module.prop"
 
 if [ ! -f "$ZN_PROPFILE" ]; then
-  log "ZYGISK_NEXT" "Error: Zygisk Next module not found at $ZN_MODULE_DIR"
+  log_e "ZYGISK_NEXT" "Zygisk Next module not found at $ZN_MODULE_DIR"
   exit 1
 fi
 
 ZN_NAME=$(grep "^name=" "$ZN_PROPFILE" | cut -d= -f2)
-log "ZYGISK_NEXT" "Detected: $ZN_NAME"
+log_i "ZYGISK_NEXT" "Detected: $ZN_NAME"
 
 case "$ZN_NAME" in
   *Zygisk*Next*|*Zygisk-Next*|*ZygiskNext*)
     ;;
   *)
-    log "ZYGISK_NEXT" "Error: Unknown module '$ZN_NAME'"
+    log_e "ZYGISK_NEXT" "Unknown module '$ZN_NAME'"
     exit 1
     ;;
 esac
 
 ensure_dir "$ZN_DATA_DIR"
 
-echo -n 1 > "$ZN_DATA_DIR/denylist_enforce"
-echo -n 1 > "$ZN_DATA_DIR/denylist_policy"
+echo -n 1 > "$ZN_DATA_DIR/denylist_enforce" && log_d "ZYGISK_NEXT" "denylist_enforce → 1"
+echo -n 1 > "$ZN_DATA_DIR/denylist_policy" && log_d "ZYGISK_NEXT" "denylist_policy → 1"
 
-log "ZYGISK_NEXT" "Applied denylist config"
-log "ZYGISK_NEXT" "Finish"
+log_i "ZYGISK_NEXT" "Applied denylist config"
+log_i "ZYGISK_NEXT" "Zygisk Next config complete"
 exit 0

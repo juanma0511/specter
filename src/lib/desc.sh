@@ -50,6 +50,7 @@ CF_EOF
     fi
   fi
 
+  log_d "DESC" "New description: $_new_desc"
   cfg_set "override.description" "$_new_desc"
 
   _escaped=$(printf '%s\n' "$_new_desc" | sed 's|[#/&\]|\\&|g')

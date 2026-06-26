@@ -31,6 +31,7 @@ detect_root_solution() {
         ROOT_SOL="magisk"; ROOT_TYPE="Unknown"
     fi
     export PATH
+    log_i "DETECT" "Root: $ROOT_TYPE ($ROOT_SOL)"
 }
 
 _pif_prop() {
