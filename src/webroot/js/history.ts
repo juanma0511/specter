@@ -128,7 +128,8 @@ export function renderActivityPreview() {
     const isError = entry.code !== undefined ? entry.code !== 0 : entry.output.toLowerCase().includes('error');
     const i18nKey = getFriendlyNames()[entry.script];
     const friendlyName = (i18nKey && t(i18nKey, '')) || entry.script;
-    const desc = entry.output.split('\n').reverse().find(l => l.trim() && !/^(>|x |\[!\])/.test(l))?.slice(0, 50) || '';
+    const stripLog = (l: string) => l.replace(/^\[\d{2}:\d{2}:\d{2}\] \[[DIWE]\] \[[^\]]*\] /, '');
+    const desc = entry.output.split('\n').map(stripLog).reverse().find(l => l.trim() && !/^(>|x |\[!\])/.test(l))?.slice(0, 50) || '';
     const item = document.createElement('div');
     item.className = 'recent-activity-item';
     item.innerHTML = `<div class="recent-activity-item-icon recent-activity-item-icon--${isError ? 'error' : 'success'}"><md-icon aria-hidden="true">${isError ? 'error' : 'check_circle'}</md-icon></div>
