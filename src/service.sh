@@ -8,7 +8,6 @@ export ROOT_SOL
 # persists if we crash/hang before the first-boot block
 _specter_first_boot=0
 [ -f "$SPECTER_DIR/.first_boot_pending" ] && { _specter_first_boot=1; rm -f "$SPECTER_DIR/.first_boot_pending"; }
-export SPECTER_FIRST_BOOT=$_specter_first_boot
 
 BOOT_LOG="$SPECTER_DIR/log/boot.log"
 mkdir -p "$SPECTER_DIR/log" 2>/dev/null || true

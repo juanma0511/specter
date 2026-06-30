@@ -25,7 +25,7 @@ _pif_validate_fingerprint() {
 }
 
 _first_boot=0
-[ -n "$SPECTER_FIRST_BOOT" ] && _first_boot=1
+[ "$SPECTER_FIRST_BOOT" = "1" ] && _first_boot=1
 [ -f "$SPECTER_DIR/.first_boot_pending" ] && _first_boot=1
 
 {
