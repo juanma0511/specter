@@ -290,11 +290,45 @@ assert_contains "security_patch.sh --set txt: system" "$(cat "$SECURITY_PATCH_FI
 assert_contains "security_patch.sh --set txt: boot" "$(cat "$SECURITY_PATCH_FILE")" "boot=2026-07-05"
 assert_contains "security_patch.sh --set txt: vendor" "$(cat "$SECURITY_PATCH_FILE")" "vendor=2026-07-01"
 
+# ---------- security_patch.sh --device: prints system build.prop patch ----------
+bootstrap
+source_libs
+mkdir -p "$TEST_ROOT/system"
+printf 'ro.build.version.security_patch=2026-04-05\n' > "$TEST_ROOT/system/build.prop"
+set_prop "ro.vendor.build.security_patch" "2026-03-01"
+export SPECTER_SYSTEM_BUILD_PROP="$TEST_ROOT/system/build.prop"
+_sp_device_out=$(run_feature security_patch.sh --device)
+assert_eq "security_patch.sh --device: system build.prop" "2026-04-05" "$_sp_device_out"
+
+# ---------- security_patch.sh --device: ignores getprop / vendor-only ----------
+bootstrap
+source_libs
+set_prop "ro.build.version.security_patch" "2026-04-05"
+set_prop "ro.vendor.build.security_patch" "2026-03-01"
+unset SPECTER_SYSTEM_BUILD_PROP
+_sp_device_rc=0
+_sp_device_out=$(run_feature security_patch.sh --device) || _sp_device_rc=$?
+assert_eq "security_patch.sh --device: getprop-only exit" "1" "$_sp_device_rc"
+assert_eq "security_patch.sh --device: getprop-only empty" "" "$_sp_device_out"
+
+# ---------- security_patch.sh --device: rejects invalid date ----------
+bootstrap
+source_libs
+mkdir -p "$TEST_ROOT/system"
+printf 'ro.build.version.security_patch=not-a-date\n' > "$TEST_ROOT/system/build.prop"
+export SPECTER_SYSTEM_BUILD_PROP="$TEST_ROOT/system/build.prop"
+_sp_device_rc=0
+_sp_device_out=$(run_feature security_patch.sh --device) || _sp_device_rc=$?
+assert_eq "security_patch.sh --device: invalid exit" "1" "$_sp_device_rc"
+assert_eq "security_patch.sh --device: invalid empty" "" "$_sp_device_out"
+
 # ---------- security_patch.sh default: Tricky Store uses build.prop patch ----------
 bootstrap
 source_libs
 mk_module tricky_store "Tricky Store"
-set_prop "ro.build.version.security_patch" "2026-08-05"
+mkdir -p "$TEST_ROOT/system"
+printf 'ro.build.version.security_patch=2026-08-05\n' > "$TEST_ROOT/system/build.prop"
+export SPECTER_SYSTEM_BUILD_PROP="$TEST_ROOT/system/build.prop"
 set_prop "ro.vendor.build.security_patch" "2026-08-01"
 detect_keystore_manager
 run_feature security_patch.sh >/dev/null
@@ -313,11 +347,115 @@ cat > "$OMK_CONFIG" << 'EOF'
 os_version = 17
 security_patch = "auto"
 EOF
-set_prop "ro.build.version.security_patch" "2026-09-05"
+mkdir -p "$TEST_ROOT/system"
+printf 'ro.build.version.security_patch=2026-09-05\n' > "$TEST_ROOT/system/build.prop"
+export SPECTER_SYSTEM_BUILD_PROP="$TEST_ROOT/system/build.prop"
 detect_keystore_manager
 run_feature security_patch.sh >/dev/null
 assert_contains "security patch default toml: value set" "$(cat "$OMK_CONFIG")" 'security_patch = "2026-09-05"'
 assert_file_not_exists "security patch default toml: no restart markers" "$OMK_RESTART_DIR/restart.keymint"
+
+# ---------- security_patch.sh first boot: device only when unset ----------
+bootstrap
+source_libs
+mk_module tricky_store "Tricky Store"
+mkdir -p "$TEST_ROOT/system"
+printf 'ro.build.version.security_patch=2026-10-05\n' > "$TEST_ROOT/system/build.prop"
+export SPECTER_SYSTEM_BUILD_PROP="$TEST_ROOT/system/build.prop"
+detect_keystore_manager
+SPECTER_FIRST_BOOT=1 run_feature security_patch.sh >/dev/null
+assert_contains "security patch first boot: device applied" "$(cat "$KSM_SECURITY")" "boot=2026-10-05"
+
+# ---------- security_patch.sh first boot: existing spoofed left alone ----------
+bootstrap
+source_libs
+mk_module tricky_store "Tricky Store"
+mkdir -p "$TEST_ROOT/system"
+printf 'ro.build.version.security_patch=2026-10-05\n' > "$TEST_ROOT/system/build.prop"
+export SPECTER_SYSTEM_BUILD_PROP="$TEST_ROOT/system/build.prop"
+detect_keystore_manager
+printf 'system=202601\nboot=2026-01-05\nvendor=2026-01-05\n' > "$KSM_SECURITY"
+SPECTER_FIRST_BOOT=1 run_feature security_patch.sh >/dev/null
+assert_contains "security patch first boot: spoofed boot kept" "$(cat "$KSM_SECURITY")" "boot=2026-01-05"
+assert_not_contains "security patch first boot: device not written" "$(cat "$KSM_SECURITY")" "2026-10-05"
+
+# ---------- security_patch.sh hot install: same walk as Action (may overwrite) ----------
+bootstrap
+source_libs
+mk_module tricky_store "Tricky Store"
+mkdir -p "$TEST_ROOT/system"
+printf 'ro.build.version.security_patch=2026-10-05\n' > "$TEST_ROOT/system/build.prop"
+export SPECTER_SYSTEM_BUILD_PROP="$TEST_ROOT/system/build.prop"
+detect_keystore_manager
+printf 'system=202603\nboot=2026-03-05\nvendor=2026-03-05\n' > "$KSM_SECURITY"
+SPECTER_HOT_INSTALL=1 run_feature security_patch.sh >/dev/null
+assert_contains "security patch hot install: device overwrites" "$(cat "$KSM_SECURITY")" "boot=2026-10-05"
+
+# ---------- security_patch.sh first boot: existing spoofed left alone (no device) ----------
+bootstrap
+source_libs
+mk_module tricky_store "Tricky Store"
+detect_keystore_manager
+printf 'system=202601\nboot=2026-01-05\nvendor=2026-01-05\n' > "$KSM_SECURITY"
+set_prop "ro.vendor.build.security_patch" "2026-11-01"
+unset SPECTER_SYSTEM_BUILD_PROP
+SPECTER_FIRST_BOOT=1 run_feature security_patch.sh >/dev/null
+assert_contains "security patch first boot: unchanged boot" "$(cat "$KSM_SECURITY")" "boot=2026-01-05"
+assert_contains "security patch first boot: unchanged vendor" "$(cat "$KSM_SECURITY")" "vendor=2026-01-05"
+
+# ---------- security_patch.sh: all Action sources off leaves spoofed unchanged ----------
+bootstrap
+source_libs
+mk_module tricky_store "Tricky Store"
+mkdir -p "$TEST_ROOT/system"
+printf 'ro.build.version.security_patch=2026-10-05\n' > "$TEST_ROOT/system/build.prop"
+export SPECTER_SYSTEM_BUILD_PROP="$TEST_ROOT/system/build.prop"
+detect_keystore_manager
+printf 'system=202603\nboot=2026-03-05\nvendor=2026-03-05\n' > "$KSM_SECURITY"
+set_cfg toggle_action_security_patch_device 0
+set_cfg toggle_action_security_patch_bulletin 0
+set_cfg toggle_action_security_patch_synthetic 0
+run_feature security_patch.sh >/dev/null
+assert_contains "security patch sources off: boot kept" "$(cat "$KSM_SECURITY")" "boot=2026-03-05"
+assert_not_contains "security patch sources off: device not written" "$(cat "$KSM_SECURITY")" "2026-10-05"
+
+# ---------- security_patch.sh: device source uses vendor when build.prop missing ----------
+bootstrap
+source_libs
+mk_module tricky_store "Tricky Store"
+detect_keystore_manager
+unset SPECTER_SYSTEM_BUILD_PROP
+set_prop "ro.vendor.build.security_patch" "2026-11-05"
+set_cfg toggle_action_security_patch_bulletin 0
+set_cfg toggle_action_security_patch_synthetic 0
+run_feature security_patch.sh >/dev/null
+assert_contains "security patch device vendor: boot" "$(cat "$KSM_SECURITY")" "boot=2026-11-05"
+
+# ---------- security_patch.sh: synthetic when device and bulletin off ----------
+bootstrap
+source_libs
+mk_module tricky_store "Tricky Store"
+detect_keystore_manager
+unset SPECTER_SYSTEM_BUILD_PROP
+set_cfg toggle_action_security_patch_device 0
+set_cfg toggle_action_security_patch_bulletin 0
+set_cfg toggle_action_security_patch_synthetic 1
+_sp_year=$(date +%Y)
+_sp_month=$(date +%m)
+run_feature security_patch.sh >/dev/null
+assert_contains "security patch synthetic: boot" "$(cat "$KSM_SECURITY")" "boot=${_sp_year}-${_sp_month}-05"
+
+# ---------- security_patch.sh first boot unset: walks device (vendor) ----------
+bootstrap
+source_libs
+mk_module tricky_store "Tricky Store"
+detect_keystore_manager
+unset SPECTER_SYSTEM_BUILD_PROP
+set_prop "ro.vendor.build.security_patch" "2026-12-05"
+set_cfg toggle_action_security_patch_bulletin 0
+set_cfg toggle_action_security_patch_synthetic 0
+SPECTER_FIRST_BOOT=1 run_feature security_patch.sh >/dev/null
+assert_contains "security patch first boot unset: vendor applied" "$(cat "$KSM_SECURITY")" "boot=2026-12-05"
 
 # ---------- ksm_read_targets / ksm_commit_targets: Tricky Store preserves suffixes+comments ----------
 bootstrap

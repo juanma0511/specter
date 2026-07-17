@@ -38,22 +38,19 @@ _validate_patch_date() {
   esac
 }
 
-_resolve_device_patch() {
-  _patch=$(_read_patch_prop "ro.build.version.security_patch" "/system/build.prop" "/system/system/build.prop") || _patch=""
-  if [ -n "$_patch" ] && _validate_patch_date "$_patch" >/dev/null; then
-    printf '%s' "$_patch"
-    unset _patch
-    return 0
-  fi
-
-  _patch=$(_read_patch_prop "ro.vendor.build.security_patch" "/vendor/build.prop") || _patch=""
-  if [ -n "$_patch" ] && _validate_patch_date "$_patch" >/dev/null; then
-    printf '%s' "$_patch"
-    unset _patch
-    return 0
-  fi
-
-  unset _patch
+_read_system_build_prop_patch() {
+  for _prop_file in ${SPECTER_SYSTEM_BUILD_PROP:-} /system/build.prop /system/system/build.prop; do
+    [ -n "$_prop_file" ] || continue
+    [ -f "$_prop_file" ] || continue
+    _val=$(grep '^ro.build.version.security_patch=' "$_prop_file" 2>/dev/null |
+      head -1 | cut -d= -f2 | tr -d '[:space:]') || _val=""
+    if [ -n "$_val" ] && _validate_patch_date "$_val" >/dev/null; then
+      printf '%s' "$_val"
+      unset _prop_file _val
+      return 0
+    fi
+  done
+  unset _prop_file _val
   return 1
 }
 
@@ -77,11 +74,62 @@ _compute_fallback_patch() {
   unset _year _month
 }
 
+_resolve_device_patch() {
+  _patch=$(_read_system_build_prop_patch) || _patch=""
+  if [ -n "$_patch" ]; then
+    printf '%s' "$_patch"
+    unset _patch
+    return 0
+  fi
+  _patch=$(_read_patch_prop "ro.vendor.build.security_patch" "/vendor/build.prop") || _patch=""
+  if [ -n "$_patch" ] && _validate_patch_date "$_patch" >/dev/null; then
+    printf '%s' "$_patch"
+    unset _patch
+    return 0
+  fi
+  unset _patch
+  return 1
+}
+
+_resolve_action_patch() {
+  _patch=""
+  _patch_source=""
+  if [ "$(cfg_get toggle_action_security_patch_device 1)" != "0" ]; then
+    _patch=$(_resolve_device_patch) || _patch=""
+    if [ -n "$_patch" ]; then
+      _patch_source="device"
+      return 0
+    fi
+  fi
+  if [ "$(cfg_get toggle_action_security_patch_bulletin 1)" != "0" ]; then
+    _patch=$(_fetch_pixel_patch) || _patch=""
+    if [ -n "$_patch" ]; then
+      _patch_source="bulletin"
+      return 0
+    fi
+  fi
+  if [ "$(cfg_get toggle_action_security_patch_synthetic 1)" != "0" ]; then
+    _patch=$(_compute_fallback_patch)
+    _patch_source="other"
+    return 0
+  fi
+  return 1
+}
+
 case "${1:-}" in
   --fetch)
-    # WebUI Fetch: bulletin, then synthetic. Action auto uses device props.
     _fetch_pixel_patch || _compute_fallback_patch
     exit 0
+    ;;
+  --device)
+    _patch=$(_read_system_build_prop_patch) || _patch=""
+    if [ -n "$_patch" ]; then
+      printf '%s\n' "$_patch"
+      unset _patch
+      exit 0
+    fi
+    unset _patch
+    exit 1
     ;;
   --get)
     ksm_get_security_patch || exit 1
@@ -101,17 +149,22 @@ esac
 
 ksm_available || die "No keystore manager (Tricky Store / OhMyKeymint) data directory found"
 
-_patch=$(_resolve_device_patch) || _patch=""
-_patch_source="device"
-if [ -z "$_patch" ]; then
-  _patch=$(_fetch_pixel_patch) || _patch=""
-  _patch_source="pixel"
+if [ "$SPECTER_FIRST_BOOT" = "1" ]; then
+  _existing=$(ksm_get_security_patch 2>/dev/null) || _existing=""
+  if [ -n "$_existing" ] && _validate_patch_date "$_existing" >/dev/null; then
+    log_i "SECURITY_PATCH" "First install: existing spoofed patch left unchanged ($_existing)"
+    unset _existing
+    exit 0
+  fi
+  unset _existing
 fi
-if [ -z "$_patch" ]; then
-  _patch=$(_compute_fallback_patch)
-  _patch_source="fallback"
+
+if ! _resolve_action_patch; then
+  log_i "SECURITY_PATCH" "No Action patch source produced a date, leaving existing value unchanged"
+  unset _patch _patch_source
+  exit 0
 fi
 
 ksm_set_security_patch "$_patch" || die "Failed to write $KSM_SECURITY"
-log_i "SECURITY_PATCH" "Applied security patch (source: $_patch_source): $_patch"
+log_i "SECURITY_PATCH" "Applied security patch from $_patch_source: $_patch"
 exit 0
